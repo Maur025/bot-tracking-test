@@ -1,6 +1,50 @@
 import dgram from 'node:dgram';
+import cluster, { Worker } from 'node:cluster';
+import { cpus } from 'node:os';
 import { getBotRoute } from 'service/get-bot-route';
-import { randomNumberBetweenDigits } from 'util/random-number-between-digits';
+
+const numberCpus = cpus().length;
+
+if (cluster.isPrimary && numberCpus > 2) {
+	console.log(`Primary process ${process.pid} is running`);
+
+	let cpuSystemReserved: number = 0;
+
+	switch (numberCpus) {
+		case 4:
+		case 6:
+		case 8: {
+			cpuSystemReserved = 2;
+			break;
+		}
+		case 12: {
+			cpuSystemReserved = 4;
+			break;
+		}
+		case 16: {
+			cpuSystemReserved = 8;
+			break;
+		}
+		default: {
+			cpuSystemReserved = 1;
+		}
+	}
+
+	let workerIndex: number = 0;
+	const workersToCreate = numberCpus - cpuSystemReserved;
+
+	while (workerIndex < workersToCreate) {
+		cluster.fork();
+
+		workerIndex++;
+	}
+
+	cluster.on('online', (worker: Worker) => {
+		console.log(`Worker ${worker.process.pid} running.`);
+	});
+} else {
+	await import('./worker');
+}
 
 const client = dgram.createSocket('udp4');
 const PORT = 8888;
@@ -99,4 +143,4 @@ const sendPositionBot = (): void => {
 	}
 };
 
-setInterval(sendPositionBot, 5000);
+// setInterval(sendPositionBot, 3000);
