@@ -85,17 +85,17 @@ const convertNmeaFormat = (coord: number): string => {
 	return `${degressStr}${minutesStr}`;
 };
 
-const getLatitude = (lat: number): string => {
-	const direction: string = lat > 0 ? 'N' : 'S';
+// const getLatitude = (lat: number): string => {
+// 	const direction: string = lat > 0 ? 'N' : 'S';
 
-	return `${convertNmeaFormat(lat)}`;
-};
+// 	return `${convertNmeaFormat(lat)}`;
+// };
 
-const getLongitude = (lon: number): string => {
-	const direction: string = lon > 0 ? 'E' : 'W';
+// const getLongitude = (lon: number): string => {
+// 	const direction: string = lon > 0 ? 'E' : 'W';
 
-	return `${convertNmeaFormat(lon)}`;
-};
+// 	return `${convertNmeaFormat(lon)}`;
+// };
 
 const getChecksumHex = (payload: string): string => {
 	let checksum: number = 0;
