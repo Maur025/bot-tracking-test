@@ -4,9 +4,10 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"dev": "tsx watch src/index.ts",
-		"start": "node dist/index.js",
+		"dev": "tsx watch src/primary.ts",
+		"start": "node dist/primary.js",
 		"build": "tsc && tsc-alias",
+		"bot-start": "tsx watch src/bot-script-test.ts",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [],
@@ -25,9 +26,12 @@
 		"typescript": "^5.8.3"
 	},
 	"dependencies": {
+		"@maur025/core-common": "^1.0.1",
 		"@tmcw/togeojson": "^7.1.1",
 		"dotenv": "^16.5.0",
 		"express": "^5.1.0",
+		"socket.io": "^4.8.1",
+		"socket.io-client": "^4.8.1",
 		"xmldom": "^0.6.0"
 	},
 	"type": "module"
