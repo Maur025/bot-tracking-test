@@ -44,6 +44,9 @@ const sendPositionBot = (): void => {
 
 	const now = Date.now();
 
+	const idSim: string = parseInt(imei).toString(16);
+	console.log(idSim);
+
 	// $$<length><command>,<imei>,<command>,<event>,<lat>,<lon>,<timestamp>,A,...*<checksum>
 	const payload: string = `${imei},${cmd},22,${coords[0]},${
 		coords[1]
@@ -71,4 +74,4 @@ const sendPositionBot = (): void => {
 	}
 };
 
-setInterval(sendPositionBot, 3000);
+setInterval(sendPositionBot, 5000);

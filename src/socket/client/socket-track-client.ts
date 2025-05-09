@@ -1,7 +1,8 @@
+import env from '@config/env';
 import { io, Socket } from 'socket.io-client';
 
 export const socketTrackConnect = (): void => {
-	const socket: Socket = io('http://172.20.50.60:7777', {
+	const socket: Socket = io(env.TRACK_URL, {
 		reconnection: true,
 		reconnectionDelay: 10000,
 		reconnectionDelayMax: 15000,

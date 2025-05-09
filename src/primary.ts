@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { socketTrackConnect } from '@socket/client/socket-track-client';
 import cluster, { Worker } from 'node:cluster';
 import { cpus } from 'node:os';
