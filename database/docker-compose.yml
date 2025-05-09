@@ -1,0 +1,24 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongo_container
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root987654321
+      MONGO_INITDB_DATABASE: DeviceBotDb
+    command: mongod --auth
+    restart: always
+    networks:
+      - compose-net
+
+volumes:
+  mongo_data:
+
+networks:
+  compose-net:
+    driver: bridge
