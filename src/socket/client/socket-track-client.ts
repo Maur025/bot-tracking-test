@@ -16,6 +16,6 @@ export const socketTrackConnect = (): void => {
 	});
 
 	socket.on('device.last', payload => {
-		console.log(payload);
+		// console.log(payload);
 	});
 };

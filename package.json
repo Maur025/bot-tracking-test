@@ -7,7 +7,6 @@
 		"dev": "tsx watch src/primary.ts",
 		"start": "node dist/primary.js",
 		"build": "tsc && tsc-alias",
-		"bot-start": "tsx watch src/bot-script-test.ts",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [],
@@ -30,9 +29,11 @@
 		"@tmcw/togeojson": "^7.1.1",
 		"dotenv": "^16.5.0",
 		"express": "^5.1.0",
+		"kafkajs": "^2.2.4",
 		"mongoose": "^8.14.2",
 		"socket.io": "^4.8.1",
 		"socket.io-client": "^4.8.1",
+		"uuid": "^11.1.0",
 		"xmldom": "^0.6.0"
 	},
 	"type": "module"

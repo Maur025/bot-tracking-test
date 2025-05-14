@@ -3,11 +3,15 @@ import { socketTrackConnect } from '@socket/client/socket-track-client';
 import cluster, { Worker } from 'node:cluster';
 import { cpus } from 'node:os';
 import { getWorkersToCreate } from 'util/get-workers-to-create';
+import { imeiDeviceList } from '@config/imet-to-test';
+import { initializeProducer } from 'kafka-main/kafka-producer';
+import { devicePublisher } from 'kafka-main/publisher/device-publisher';
 
 const numberCpus = cpus().length;
 
 if (cluster.isPrimary && numberCpus > 2) {
 	console.log(`Primary process ${process.pid} is running`);
+	await initializeProducer();
 	socketTrackConnect();
 
 	const workersToCreate: number = getWorkersToCreate(numberCpus);
@@ -22,6 +26,13 @@ if (cluster.isPrimary && numberCpus > 2) {
 	cluster.on('online', (worker: Worker) => {
 		console.log(`Worker ${worker.process.pid} running.`);
 	});
+
+	for (const imeiDevice of imeiDeviceList) {
+		await devicePublisher({
+			deviceId: imeiDevice.imei.toString(16),
+			imei: imeiDevice.imei,
+		});
+	}
 } else {
-	await import('./worker');
+	await import('./index');
 }
