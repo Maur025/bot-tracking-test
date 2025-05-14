@@ -9,8 +9,6 @@ const botRoute: [number, number][] = getBotRoute();
 const imei: string = '123456789012345';
 const cmd: 'GPRMC' | 'AAA' = 'AAA';
 
-let index: number = 0;
-
 const getTimestamp = () => {
 	const date = new Date();
 
@@ -39,13 +37,19 @@ const getChecksumHex = (payload: string): string => {
 	return checksum.toString(16).toUpperCase().padStart(2, '0');
 };
 
-const sendPositionBot = (): void => {
+export const sendPositionBot = (
+	{
+		imei,
+		deviceId,
+	}: {
+		imei: number;
+		deviceId: string;
+	},
+	index: number
+): void => {
 	const coords = botRoute[index];
-
-	const now = Date.now();
-
-	const idSim: string = parseInt(imei).toString(16);
-	console.log(idSim);
+	console.log('DEVICEID: ', deviceId);
+	console.log('CURRENT INDEX: ', index);
 
 	// $$<length><command>,<imei>,<command>,<event>,<lat>,<lon>,<timestamp>,A,...*<checksum>
 	const payload: string = `${imei},${cmd},22,${coords[0]},${
@@ -66,12 +70,6 @@ const sendPositionBot = (): void => {
 			console.log('Message sent successfully');
 		}
 	});
-
-	index++;
-
-	if (index >= botRoute.length) {
-		index = 0;
-	}
 };
 
-setInterval(sendPositionBot, 5000);
+// setInterval(sendPositionBot, 5000);
