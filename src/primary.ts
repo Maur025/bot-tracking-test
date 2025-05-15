@@ -6,11 +6,13 @@ import { getWorkersToCreate } from 'util/get-workers-to-create';
 import { imeiDeviceList } from '@config/imet-to-test';
 import { initializeProducer } from 'kafka-main/kafka-producer';
 import { devicePublisher } from 'kafka-main/publisher/device-publisher';
+import { loggerInfo } from '@maur025/core-logger';
 
 const numberCpus = cpus().length;
 
 if (cluster.isPrimary && numberCpus > 2) {
-	console.log(`Primary process ${process.pid} is running`);
+	loggerInfo(`Primary process [${process.pid}] is running`);
+
 	await initializeProducer();
 	socketTrackConnect();
 
@@ -24,7 +26,7 @@ if (cluster.isPrimary && numberCpus > 2) {
 	}
 
 	cluster.on('online', (worker: Worker) => {
-		console.log(`Worker ${worker.process.pid} running.`);
+		loggerInfo(`Worker [${worker.process.pid}] running.`);
 	});
 
 	for (const imeiDevice of imeiDeviceList) {

@@ -16,7 +16,7 @@ export const deviceInitConsumerHandler = async ({
 	const valueJson = JSON.parse(value);
 	// console.log(valueJson);
 
-	let index = randomNumberBetweenDigits(1, 1);
+	let index = randomNumberBetweenDigits(1, 2);
 
 	setInterval(() => {
 		sendPositionBot(
