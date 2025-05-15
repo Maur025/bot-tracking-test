@@ -1,4 +1,5 @@
 import env from '@config/env';
+import { loggerError, loggerInfo } from '@maur025/core-logger';
 import { connect } from 'mongoose';
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD } = env;
@@ -8,9 +9,13 @@ export const connectToDabase = async (): Promise<void> => {
 
 	try {
 		const mongooseConnection = await connect(uridb);
-
-		console.log(`connected to database: ${mongooseConnection.connection.name}`);
+		loggerInfo(
+			`[Mongo-db] connected to database: '${mongooseConnection.connection.name}'`
+		);
 	} catch (error) {
-		console.error('ocurrio un error', error);
+		loggerError(
+			'Error connecting to database: ',
+			error instanceof Error ? error : undefined
+		);
 	}
 };

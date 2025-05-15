@@ -1,5 +1,8 @@
 import env from '@config/env';
+import { loggerInfo } from '@maur025/core-logger';
 import { io, Socket } from 'socket.io-client';
+
+const SOCKET_NAME = 'Socket-client-track';
 
 export const socketTrackConnect = (): void => {
 	const socket: Socket = io(env.TRACK_URL, {
@@ -10,9 +13,7 @@ export const socketTrackConnect = (): void => {
 	});
 
 	socket.on('connect', () => {
-		console.log(`conectado with id ${socket.id}`);
-
-		// socket.emit('message', 'testing');
+		loggerInfo(`[${SOCKET_NAME}] connected with id '${socket.id}'`);
 	});
 
 	socket.on('device.last', payload => {

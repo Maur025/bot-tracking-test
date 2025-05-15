@@ -1,6 +1,7 @@
 import Environment from '@models/interface/environment';
 
 const {
+	PORT = 3000,
 	DB_USER = 'root',
 	DB_PASSWORD = '123456',
 	DB_HOST = 'localhost',
