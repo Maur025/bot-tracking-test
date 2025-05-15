@@ -27,6 +27,7 @@
 	"dependencies": {
 		"@maur025/core-common": "^1.0.1",
 		"@maur025/core-logger": "^1.0.0",
+		"@maur025/core-model-data": "^1.1.1",
 		"@tmcw/togeojson": "^7.1.1",
 		"dotenv": "^16.5.0",
 		"express": "^5.1.0",
