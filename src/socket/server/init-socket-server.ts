@@ -6,7 +6,14 @@ import { SocketTopic } from 'socket-topics';
 import { Server } from 'socket.io';
 
 const SOCKET_SERVER_NAME = 'Socket-server';
-const { CONNECTION, DISCONNECT, ROOM_JOIN, ROOM_LEAVE } = SocketTopic;
+const {
+	CONNECTION,
+	DISCONNECT,
+	ROOM_JOIN,
+	ROOM_LEAVE,
+	ROOM_JOIN_RESPONSE,
+	ROOM_LEAVE_RESPONSE,
+} = SocketTopic;
 
 let io: Server;
 
@@ -35,12 +42,19 @@ export const initSocketServer = (httpServer: HttpServer): Server => {
 			loggerInfo(
 				`[${SOCKET_SERVER_NAME}] socket '${socket.id}' joined room '${roomName}'`
 			);
+
+			socket.emit(ROOM_JOIN_RESPONSE, `join to room "${roomName}" succesfull`);
 		});
 
 		socket.on(ROOM_LEAVE, (roomName: string) => {
 			socket.leave(roomName);
 			loggerInfo(
 				`[${SOCKET_SERVER_NAME}] socket '${socket.id}' left room '${roomName}'`
+			);
+
+			socket.emit(
+				ROOM_LEAVE_RESPONSE,
+				`leave to room "${roomName}" succesfull`
 			);
 		});
 	});
