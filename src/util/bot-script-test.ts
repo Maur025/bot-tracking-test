@@ -3,7 +3,7 @@ import { getBotRoute } from 'service/get-bot-route';
 
 const client = dgram.createSocket('udp4');
 const PORT = 8888;
-const HOST = '172.20.50.60';
+const HOST = 'localhost';
 
 const botRoute: [number, number][] = getBotRoute();
 const imei: string = '123456789012345';

@@ -17,6 +17,12 @@ importers:
       '@maur025/core-model-data':
         specifier: ^1.1.1
         version: 1.1.1
+      '@socket.io/cluster-adapter':
+        specifier: ^0.2.2
+        version: 0.2.2(socket.io-adapter@2.5.5)
+      '@socket.io/sticky':
+        specifier: ^1.0.4
+        version: 1.0.4
       '@tmcw/togeojson':
         specifier: ^7.1.1
         version: 7.1.1
@@ -259,8 +265,17 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
+  '@socket.io/cluster-adapter@0.2.2':
+    resolution: {integrity: sha512-/tNcY6qQx0BOgjl4mFk3YxX6pjaPdEyeWhP88Ea9gTlISY4SfA7t8VxbryeAs5/9QgXzChlvSN/i37Gog3kWag==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      socket.io-adapter: ^2.4.0
+
   '@socket.io/component-emitter@3.1.2':
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
+
+  '@socket.io/sticky@1.0.4':
+    resolution: {integrity: sha512-VuauT5CJLvzYtKIgouFSQ8rUaygseR+zRutnwh6ZA2QYcXx+8g52EoJ8V2SLxfo+Tfs3ELUDy08oEXxlWNrxaw==}
 
   '@tmcw/togeojson@7.1.1':
     resolution: {integrity: sha512-Acs7XtT/oP2koW041R3K1dGiBKAcVEO44GnZIJoVwgtrbCsG5blaEpzJeUEK72wU0KZCKAljD/XUjIPlhfRebg==}
@@ -1116,7 +1131,16 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
+  '@socket.io/cluster-adapter@0.2.2(socket.io-adapter@2.5.5)':
+    dependencies:
+      debug: 4.3.7
+      socket.io-adapter: 2.5.5
+    transitivePeerDependencies:
+      - supports-color
+
   '@socket.io/component-emitter@3.1.2': {}
+
+  '@socket.io/sticky@1.0.4': {}
 
   '@tmcw/togeojson@7.1.1': {}
 

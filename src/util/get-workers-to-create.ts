@@ -2,6 +2,12 @@ import { pipe } from '@maur025/core-common';
 
 const getQuantityCpuSystemReserved = (numberCpus: number): number => {
 	switch (numberCpus) {
+		case 1: {
+			return 0;
+		}
+		case 2: {
+			return 1;
+		}
 		case 4:
 		case 6:
 		case 8: {
@@ -13,8 +19,11 @@ const getQuantityCpuSystemReserved = (numberCpus: number): number => {
 		case 16: {
 			return 8;
 		}
+		case 20: {
+			return 16;
+		}
 		default: {
-			return 1;
+			return numberCpus - 1;
 		}
 	}
 };
