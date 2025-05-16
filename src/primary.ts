@@ -10,6 +10,7 @@ import { setupMaster } from '@socket.io/sticky';
 import { setupPrimary } from '@socket.io/cluster-adapter';
 import env from '@config/env';
 import { initializeBotDevice } from 'service/initialize-bot-device';
+import { connectToDabase } from '@config/database/database-config';
 
 const numberCpus = cpus().length;
 
@@ -29,6 +30,8 @@ if (cluster.isPrimary && numberCpus > 2) {
 	cluster.setupPrimary({
 		serialization: 'advanced',
 	});
+
+	connectToDabase();
 
 	httpServer.listen(env.PORT, () => {
 		loggerInfo(
