@@ -1,10 +1,14 @@
 import env from '@config/env';
 import { loggerError, loggerInfo } from '@maur025/core-logger';
-import { connect } from 'mongoose';
+import mongoose, { connect } from 'mongoose';
 
 const { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD } = env;
 
 export const connectToDabase = async (): Promise<void> => {
+	if (mongoose.connection.readyState >= 1) {
+		return;
+	}
+
 	const uridb: string = `mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/DeviceBotDb?authSource=admin`;
 
 	try {
@@ -18,4 +22,8 @@ export const connectToDabase = async (): Promise<void> => {
 			error instanceof Error ? error : undefined
 		);
 	}
+};
+
+export const disconnectDatabase = (): Promise<void> => {
+	return mongoose.disconnect();
 };

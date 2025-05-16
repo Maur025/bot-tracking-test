@@ -5,10 +5,10 @@ const getQuantityCpuSystemReserved = (numberCpus: number): number => {
 		case 1: {
 			return 0;
 		}
-		case 2:
-		case 4: {
+		case 2: {
 			return 1;
 		}
+		case 4:
 		case 6:
 		case 8: {
 			return 2;
