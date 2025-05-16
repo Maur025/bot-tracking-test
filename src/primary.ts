@@ -7,6 +7,11 @@ import { imeiDeviceList } from '@config/imet-to-test';
 import { initializeProducer } from 'kafka-main/kafka-producer';
 import { devicePublisher } from 'kafka-main/publisher/device-publisher';
 import { loggerInfo } from '@maur025/core-logger';
+import { createServer, Server } from 'node:http';
+import { setupMaster } from '@socket.io/sticky';
+import { setupPrimary } from '@socket.io/cluster-adapter';
+import env from '@config/env';
+import { initializeBotDevice } from 'service/initialize-bot-device';
 
 const numberCpus = cpus().length;
 
@@ -15,6 +20,23 @@ if (cluster.isPrimary && numberCpus > 2) {
 
 	await initializeProducer();
 	socketTrackConnect();
+
+	const httpServer: Server = createServer();
+	setupMaster(httpServer, {
+		loadBalancingMethod: 'least-connection',
+	});
+
+	setupPrimary();
+
+	cluster.setupPrimary({
+		serialization: 'advanced',
+	});
+
+	httpServer.listen(env.PORT, () => {
+		loggerInfo(
+			`[primary] express and socket gateway running on port [${env.PORT}]`
+		);
+	});
 
 	const workersToCreate: number = getWorkersToCreate(numberCpus);
 	let workerIndex: number = 0;
@@ -29,12 +51,7 @@ if (cluster.isPrimary && numberCpus > 2) {
 		loggerInfo(`Worker [${worker.process.pid}] running.`);
 	});
 
-	for (const imeiDevice of imeiDeviceList) {
-		await devicePublisher({
-			deviceId: imeiDevice.imei.toString(16),
-			imei: imeiDevice.imei,
-		});
-	}
+	await initializeBotDevice();
 } else {
 	await import('./index');
 }
