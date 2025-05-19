@@ -3,7 +3,7 @@ import { deviceService } from './device-service';
 import { generateBotDevice } from './generate-bot-device';
 import { IDevice } from '@models/schema/device-schema';
 
-const DEVICE_QUANTITY = 5;
+const DEVICE_QUANTITY = 1;
 
 export const initializeBotDevice = async (): Promise<void> => {
 	await generateBotDevice(DEVICE_QUANTITY);

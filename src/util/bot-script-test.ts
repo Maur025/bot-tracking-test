@@ -1,5 +1,8 @@
 import env from '@config/env';
 import dgram from 'node:dgram';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { getBotRoute } from 'service/get-bot-route';
 
 const { UDP_HOST, UDP_PORT } = env;
@@ -37,34 +40,53 @@ const getChecksumHex = (payload: string): string => {
 	return checksum.toString(16).toUpperCase().padStart(2, '0');
 };
 
-export const sendPositionBot = (
-	{
-		imei,
-		deviceId,
-	}: {
-		imei: string;
-		deviceId: string;
-	},
-	index: number
-): void => {
-	const coords = botRoute[index];
-
+export const sendPositionBot = ({
+	imei,
+	deviceId,
+}: {
+	imei: string;
+	deviceId: string;
+}): //index: number
+void => {
+	// const coords = botRoute[index];
 	// $$<length><command>,<imei>,<command>,<event>,<lat>,<lon>,<timestamp>,A,...*<checksum>
-	const payload: string = `${imei},${cmd},22,${coords[0]},${
-		coords[1]
-	},${getTimestamp()},A,0,10,40.00,0,0,0,0,3600,100,1,0,0,0`;
+	// const payload: string = `${imei},${cmd},22,${coords[0]},${
+	// 	coords[1]
+	// },${getTimestamp()},A,0,10,40.00,0,0,0,0,3600,100,1,0,0,0`;
+	// const gpsMeiData: string = `$$${getPayloadLength(
+	// 	payload
+	// )},${payload}*${getChecksumHex(payload)}`;
+	// const message = Buffer.from(gpsMeiData, 'ascii');
+	// udpClient.send(message, UDP_PORT, UDP_HOST, error => {
+	// 	if (error) {
+	// 		console.error('Error sending message:', error);
+	// 	} else {
+	// 		console.log(`GPS data send: ${message}`);
+	// 	}
+	// });
+};
 
-	const gpsMeiData: string = `$$${getPayloadLength(
-		payload
-	)},${payload}*${getChecksumHex(payload)}`;
+export const sendPositionTest = (imei: string) => {
+	const __filename = fileURLToPath(import.meta.url);
+	const __dirname = dirname(__filename);
 
-	const message = Buffer.from(gpsMeiData, 'ascii');
+	const allWays: { vehicleWays: any[] } = JSON.parse(
+		readFileSync(join(__dirname, '../config/only-vehicle-ways.json'), 'utf8')
+	);
 
-	udpClient.send(message, UDP_PORT, UDP_HOST, error => {
-		if (error) {
-			console.error('Error sending message:', error);
-		} else {
-			console.log(`GPS data send: ${message}`);
+	for (const way of allWays.vehicleWays) {
+		for (const coord of way.geometry?.coordinates) {
+			const payload: string = `${imei},${cmd},22,${coord[0]},${
+				coord[1]
+			},${getTimestamp()},A,0,10,40.00,0,0,0,0,3600,100,1,0,0,0`;
+
+			const gpsMeiData: string = `$$${getPayloadLength(
+				payload
+			)},${payload}*${getChecksumHex(payload)}`;
+
+			const message = Buffer.from(gpsMeiData, 'ascii');
+
+			console.log(gpsMeiData);
 		}
-	});
+	}
 };
