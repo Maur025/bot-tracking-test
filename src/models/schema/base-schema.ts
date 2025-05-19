@@ -3,7 +3,6 @@ export const baseSchema = {
 	_id: {
 		type: String,
 		default: uuidv4,
-		unique: true,
 	},
 	deleted: { type: Boolean, default: false },
 };
