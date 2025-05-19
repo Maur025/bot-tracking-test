@@ -42,14 +42,12 @@ export const sendPositionBot = (
 		imei,
 		deviceId,
 	}: {
-		imei: number;
+		imei: string;
 		deviceId: string;
 	},
 	index: number
 ): void => {
 	const coords = botRoute[index];
-	console.log('DEVICEID: ', deviceId);
-	console.log('CURRENT INDEX: ', index);
 
 	// $$<length><command>,<imei>,<command>,<event>,<lat>,<lon>,<timestamp>,A,...*<checksum>
 	const payload: string = `${imei},${cmd},22,${coords[0]},${
@@ -71,5 +69,3 @@ export const sendPositionBot = (
 		}
 	});
 };
-
-// setInterval(sendPositionBot, 5000);

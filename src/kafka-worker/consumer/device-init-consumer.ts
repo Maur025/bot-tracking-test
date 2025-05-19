@@ -2,27 +2,27 @@ import { sendPositionBot } from 'util/bot-script-test';
 import { EachMessagePayload } from 'kafkajs';
 import { randomNumberBetweenDigits } from '../../util/random-number-between-digits';
 import { getBotRoute } from 'service/get-bot-route';
+import { IDevice } from '@models/schema/device-schema';
+import { getPayloadKafka } from 'util/json-util';
 
 export const deviceInitConsumerHandler = async ({
 	topic,
 	partition,
 	message,
-}: EachMessagePayload) => {
-	const value = message.value?.toString();
-	if (!value) {
+}: EachMessagePayload): Promise<void> => {
+	const device: IDevice | null = getPayloadKafka<IDevice>(message.value);
+
+	if (!device) {
 		return;
 	}
-
-	const valueJson = JSON.parse(value);
-	// console.log(valueJson);
 
 	let index = randomNumberBetweenDigits(1, 2);
 
 	setInterval(() => {
 		sendPositionBot(
 			{
-				imei: valueJson.imei,
-				deviceId: valueJson.deviceId,
+				imei: device.imei,
+				deviceId: device.referenceCaptureId,
 			},
 			index
 		);
