@@ -9,4 +9,6 @@ export default interface Environment {
 	REDIS_HOST: string;
 	REDIS_PORT: number;
 	DB_NAME: string;
+	UDP_HOST: string;
+	UDP_PORT: number;
 }

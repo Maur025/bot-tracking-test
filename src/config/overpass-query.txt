@@ -1,0 +1,8 @@
+[out:json][timeout:100];
+(
+  way["highway"]["area"!~"yes"]["highway"!~"pedestrian|footway|cycleway|path|steps|track|elevator|rest_area|corridor|platform|service_area|escape"](-16.557825307402226,-68.22436943468281,-16.461148675764434,-68.03279236579559);
+);
+
+out body;
+>;
+out skel body;
