@@ -5,4 +5,8 @@ export default interface Environment {
 	DB_HOST: string;
 	DB_PORT: number;
 	TRACK_URL: string;
+	KAFKA_BROKER: string;
+	REDIS_HOST: string;
+	REDIS_PORT: number;
+	DB_NAME: string;
 }

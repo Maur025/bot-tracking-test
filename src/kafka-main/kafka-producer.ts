@@ -1,8 +1,8 @@
 import { Partitioners } from 'kafkajs';
-import { kafkaClient } from './kafka-client';
+import { kafkaClientPrimary } from './kafka-client-primary';
 import { v4 as uuidv4 } from 'uuid';
 
-const producer = kafkaClient.producer({
+const producer = kafkaClientPrimary.producer({
 	createPartitioner: Partitioners.LegacyPartitioner,
 });
 

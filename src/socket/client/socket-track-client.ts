@@ -4,7 +4,7 @@ import { DeviceCurrentLocation } from '@models/data/device-current-location';
 import { deviceLastLocationPublisher } from 'kafka-main/publisher/device-last-location';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_NAME = 'Socket-client-track';
+const SOCKET_NAME = 'socket-client-track-primary';
 
 export const socketTrackConnect = (): void => {
 	const socket: Socket = io(env.TRACK_URL, {
@@ -15,7 +15,9 @@ export const socketTrackConnect = (): void => {
 	});
 
 	socket.on('connect', () => {
-		loggerInfo(`[${SOCKET_NAME}] connected with id '${socket.id}'`);
+		loggerInfo(
+			`[${SOCKET_NAME}] connected to ${env.TRACK_URL} with id '${socket.id}'`
+		);
 	});
 
 	socket.on('device.last', (payload: DeviceCurrentLocation) => {
