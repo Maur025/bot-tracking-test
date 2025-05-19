@@ -4,7 +4,7 @@ import cluster, { Worker } from 'node:cluster';
 import { cpus } from 'node:os';
 import { getWorkersToCreate } from 'util/get-workers-to-create';
 import { initializeProducer } from 'kafka-main/kafka-producer';
-import { loggerInfo } from '@maur025/core-logger';
+import { loggerDebug, loggerInfo } from '@maur025/core-logger';
 import { createServer, Server } from 'node:http';
 import { setupMaster } from '@socket.io/sticky';
 import { setupPrimary } from '@socket.io/cluster-adapter';
@@ -15,7 +15,7 @@ import { connectToDabase } from '@config/database/database-config';
 const numberCpus = cpus().length;
 
 if (cluster.isPrimary && numberCpus > 2) {
-	loggerInfo(`Primary process [${process.pid}] is running`);
+	loggerDebug(`Primary process [${process.pid}] is running`);
 
 	await initializeProducer();
 	socketTrackConnect();
@@ -35,7 +35,7 @@ if (cluster.isPrimary && numberCpus > 2) {
 
 	httpServer.listen(env.PORT, () => {
 		loggerInfo(
-			`[primary] express and socket gateway running on port [${env.PORT}]`
+			`[primary] express and socket gateway running on http://0.0.0.0:${env.PORT}`
 		);
 	});
 
@@ -49,7 +49,7 @@ if (cluster.isPrimary && numberCpus > 2) {
 	}
 
 	cluster.on('online', (worker: Worker) => {
-		loggerInfo(`Worker [${worker.process.pid}] running.`);
+		loggerDebug(`Worker [${worker.process.pid}] running.`);
 	});
 
 	await initializeBotDevice();
