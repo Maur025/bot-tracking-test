@@ -11,6 +11,8 @@ const {
 	REDIS_PORT = '6379',
 	KAFKA_BROKER = 'localhost:9092',
 	DB_NAME = 'DeviceBotDb',
+	UDP_HOST = 'localhost',
+	UDP_PORT = '8888',
 } = process.env;
 
 const env: Environment = {
@@ -24,6 +26,8 @@ const env: Environment = {
 	REDIS_HOST,
 	REDIS_PORT: Number(REDIS_PORT),
 	DB_NAME,
+	UDP_HOST,
+	UDP_PORT: Number(UDP_PORT),
 };
 
 export default env;

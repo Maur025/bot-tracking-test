@@ -1,12 +1,12 @@
+import env from '@config/env';
 import dgram from 'node:dgram';
 import { getBotRoute } from 'service/get-bot-route';
 
-const client = dgram.createSocket('udp4');
-const PORT = 8888;
-const HOST = 'localhost';
+const { UDP_HOST, UDP_PORT } = env;
+
+const udpClient = dgram.createSocket('udp4');
 
 const botRoute: [number, number][] = getBotRoute();
-const imei: string = '123456789012345';
 const cmd: 'GPRMC' | 'AAA' = 'AAA';
 
 const getTimestamp = () => {
@@ -60,12 +60,11 @@ export const sendPositionBot = (
 
 	const message = Buffer.from(gpsMeiData, 'ascii');
 
-	console.log(`Sending GPS data: ${message}`);
-	client.send(message, PORT, HOST, error => {
+	udpClient.send(message, UDP_PORT, UDP_HOST, error => {
 		if (error) {
 			console.error('Error sending message:', error);
 		} else {
-			console.log('Message sent successfully');
+			console.log(`GPS data send: ${message}`);
 		}
 	});
 };
