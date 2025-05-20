@@ -1,5 +1,5 @@
 import { randomNumberBetweenDigits } from 'util/random-number-between-digits';
-import { deviceService } from './device-service';
+import { deviceService } from './database/device-service';
 import { IDevice } from '@models/schema/device-schema';
 import { loggerError } from '@maur025/core-logger';
 

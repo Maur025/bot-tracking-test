@@ -1,5 +1,5 @@
 import { devicePublisher } from 'kafka-main/publisher/device-publisher';
-import { deviceService } from './device-service';
+import { deviceService } from './database/device-service';
 import { generateBotDevice } from './generate-bot-device';
 import { IDevice } from '@models/schema/device-schema';
 

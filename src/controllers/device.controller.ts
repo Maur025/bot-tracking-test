@@ -1,6 +1,6 @@
 import { MultiResponseBuilder } from '@maur025/core-model-data';
 import { Request, Response } from 'express';
-import { deviceService } from 'service/device-service';
+import { deviceService } from 'service/database/device-service';
 import { StatusCodes } from 'http-status-codes';
 import { IDevice } from '@models/schema/device-schema';
 
