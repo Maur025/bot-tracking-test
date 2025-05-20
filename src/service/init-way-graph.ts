@@ -65,7 +65,10 @@ export const initWayGraph = async () => {
 			if (!startGraphFound) {
 				await graphWayIntersectionService.save({
 					nodeId: startNodeId,
-					coord: startPoint,
+					coord: {
+						type: 'Point',
+						coordinates: startPoint,
+					},
 					connections: startIntersectWays.map(intersect => intersect._id),
 				});
 			}
@@ -73,7 +76,10 @@ export const initWayGraph = async () => {
 			if (!endGraphFound) {
 				await graphWayIntersectionService.save({
 					nodeId: endNodeId,
-					coord: endPoint,
+					coord: {
+						type: 'Point',
+						coordinates: endPoint,
+					},
 					connections: endIntersectWays.map(intersect => intersect._id),
 				});
 			}
