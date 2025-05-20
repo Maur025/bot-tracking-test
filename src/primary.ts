@@ -11,6 +11,8 @@ import { setupPrimary } from '@socket.io/cluster-adapter';
 import env from '@config/env';
 import { initializeBotDevice } from 'service/initialize-bot-device';
 import { connectToDabase } from '@config/database/database-config';
+import { initWayGraph } from 'service/init-way-graph';
+import { initRedisClient } from '@config/redis/create-redis-client';
 
 const numberCpus = cpus().length;
 
@@ -31,7 +33,9 @@ if (cluster.isPrimary && numberCpus > 2) {
 		serialization: 'advanced',
 	});
 
-	connectToDabase();
+	await initRedisClient();
+
+	await connectToDabase();
 
 	httpServer.listen(env.PORT, () => {
 		loggerInfo(
@@ -52,6 +56,7 @@ if (cluster.isPrimary && numberCpus > 2) {
 		loggerDebug(`Worker [${worker.process.pid}] running.`);
 	});
 
+	await initWayGraph();
 	await initializeBotDevice();
 } else {
 	await import('./index');
