@@ -66,7 +66,7 @@ void => {
 	// });
 };
 
-export const sendPositionTest = (imei: string) => {
+export const sendPositionTest = async (imei: string) => {
 	const __filename = fileURLToPath(import.meta.url);
 	const __dirname = dirname(__filename);
 
@@ -75,18 +75,33 @@ export const sendPositionTest = (imei: string) => {
 	);
 
 	for (const way of allWays.vehicleWays) {
-		for (const coord of way.geometry?.coordinates) {
-			const payload: string = `${imei},${cmd},22,${coord[0]},${
-				coord[1]
+		for (const coord of way.geometry?.coordinates ?? []) {
+			const payload: string = `${imei},${cmd},22,${coord[1]},${
+				coord[0]
 			},${getTimestamp()},A,0,10,40.00,0,0,0,0,3600,100,1,0,0,0`;
 
 			const gpsMeiData: string = `$$${getPayloadLength(
 				payload
 			)},${payload}*${getChecksumHex(payload)}`;
 
-			const message = Buffer.from(gpsMeiData, 'ascii');
+			emitForUdp(gpsMeiData);
 
-			console.log(gpsMeiData);
+			await setDelay(1000);
 		}
 	}
 };
+
+const emitForUdp = (dataToSend: string) => {
+	const message = Buffer.from(dataToSend, 'ascii');
+
+	udpClient.send(message, UDP_PORT, UDP_HOST, error => {
+		if (error) {
+			console.error('Error sending message:', error);
+		} else {
+			console.log(`GPS data send: ${message.toString()}`);
+		}
+	});
+};
+
+const setDelay = (ms: number) =>
+	new Promise(resolve => setTimeout(resolve, ms));
