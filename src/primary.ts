@@ -13,6 +13,7 @@ import { initializeBotDevice } from 'service/initialize-bot-device';
 import { connectToDabase } from '@config/database/database-config';
 import { initWayGraph } from 'service/init-way-graph';
 import { initRedisClient } from '@config/redis/create-redis-client';
+import { registerWayToDatabase } from 'service/register-way-to-database';
 
 const numberCpus = cpus().length;
 
@@ -55,6 +56,8 @@ if (cluster.isPrimary && numberCpus > 2) {
 	cluster.on('online', (worker: Worker) => {
 		loggerDebug(`Worker [${worker.process.pid}] running.`);
 	});
+
+	await registerWayToDatabase();
 
 	await initWayGraph();
 	await initializeBotDevice();

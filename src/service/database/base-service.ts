@@ -1,5 +1,5 @@
 import { FilterQuery, Model, PaginateModel, PaginateResult } from 'mongoose';
-import { BaseDocument } from '../models/interface/base-document';
+import { BaseDocument } from '../../models/interface/base-document';
 
 export abstract class BaseService<T extends BaseDocument> {
 	protected abstract serviceModel(): Model<T>;

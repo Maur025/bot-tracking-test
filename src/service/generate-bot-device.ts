@@ -1,5 +1,5 @@
 import { createBotDevices } from './create-bot-devices';
-import { deviceService } from './device-service';
+import { deviceService } from './database/device-service';
 
 export const generateBotDevice = async (quantity: number): Promise<void> => {
 	const registeredDevices: number = await deviceService.count();
