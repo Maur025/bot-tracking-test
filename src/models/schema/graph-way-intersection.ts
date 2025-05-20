@@ -6,7 +6,10 @@ import moongosePaginate from 'mongoose-paginate-v2';
 
 export interface IGraphWayIntersection extends BaseDocument {
 	nodeId: string;
-	coord: [number, number];
+	coord: {
+		type: string;
+		coordinates: [number, number];
+	};
 	connections: string[];
 }
 
@@ -18,8 +21,15 @@ const GraphWayIntersectionSchema = new Schema<IGraphWayIntersection>(
 			required: true,
 		},
 		coord: {
-			type: [[Number]],
-			required: true,
+			type: {
+				type: String,
+				enum: ['Point'],
+				required: true,
+			},
+			coordinates: {
+				type: [Number],
+				required: true,
+			},
 		},
 		connections: [
 			{
@@ -31,6 +41,7 @@ const GraphWayIntersectionSchema = new Schema<IGraphWayIntersection>(
 	baseSchemaOptions
 );
 
+GraphWayIntersectionSchema.index({ coord: '2dsphere' });
 GraphWayIntersectionSchema.plugin(moongosePaginate);
 
 export const graphWayIntersection = model<
