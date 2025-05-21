@@ -23,4 +23,8 @@ export const socketTrackConnect = (): void => {
 	socket.on('device.last', (payload: DeviceCurrentLocation) => {
 		deviceLastLocationPublisher(payload);
 	});
+
+	socket.on('device.state', payload => {
+		// console.log(payload);
+	});
 };
