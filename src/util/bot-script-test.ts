@@ -28,7 +28,6 @@ const {
 } = deviceEvents;
 
 const udpClient = dgram.createSocket('udp4');
-const cmd: 'GPRMC' | 'AAA' = 'AAA';
 
 const START_POINT: [number, number] = [-68.069209, -16.529014]; // [lon,lat]
 // const END_POINT: [number, number] = [-68.131162, -16.535328]; // [lon,lat]
@@ -64,6 +63,36 @@ const getChecksumHex = (payload: string): string => {
 	return checksum.toString(16).toUpperCase().padStart(2, '0');
 };
 
+const DEVICE_TEMPLATE: {
+	cmd: 'GPRMC' | 'AAA';
+	stateGps: 'A';
+	usedSatellites: number;
+	acc: number;
+	speed: string; // -> format 00.00
+	odometer: number; // -> quantity km traveled
+	bateryLevel: number; // -> percentage or mv
+	ignition: boolean; // boolean to clarity -> convert in 0 or 1
+	analog: number;
+	einfo: number;
+	custom: number;
+} = {
+	// imei
+	cmd: 'AAA',
+	// event
+	// coords
+	// date
+	stateGps: 'A',
+	usedSatellites: 0,
+	acc: 10,
+	speed: '0.00',
+	odometer: 3600,
+	bateryLevel: 0,
+	ignition: false,
+	analog: 0,
+	einfo: 0,
+	custom: 0,
+};
+
 const getPayload = ({
 	imei,
 	lat,
@@ -75,24 +104,37 @@ const getPayload = ({
 	lon: number;
 	event: string;
 }): string => {
-	return `${imei},${cmd},${event},${lat},${lon},${getTimestamp()},A,0,10,40.00,0,0,0,0,3600,100,1,0,0,0`;
+	const {
+		cmd,
+		stateGps,
+		usedSatellites,
+		acc,
+		speed,
+		odometer,
+		bateryLevel,
+		ignition,
+		analog,
+		einfo,
+		custom,
+	} = DEVICE_TEMPLATE;
+
+	const payloadBody: string = `${imei},${cmd},${event},${lat},${lon},${getTimestamp()},${stateGps},${usedSatellites},${acc},${speed},0,0,0,0,${odometer},${bateryLevel},${
+		ignition ? '1' : '0'
+	},${analog},${einfo},${custom}`;
+
+	return `$$${getPayloadLength(payloadBody)},${payloadBody}*${getChecksumHex(
+		payloadBody
+	)}`;
 };
 
 export const sendPositionTest = async (imei: string) => {
-	// const __filename = fileURLToPath(import.meta.url);
-	// const __dirname = dirname(__filename);
-
 	const path = await testGraphMovement();
 	console.log(path);
-
-	// const allWays: { vehicleWays: any[] } = JSON.parse(
-	// 	readFileSync(join(__dirname, '../config/only-vehicle-ways.json'), 'utf8')
-	// );
 
 	const firstCoord = path[0] ?? [0, 0];
 
 	// simulate ignition device
-	await setDelay(1000);
+	DEVICE_TEMPLATE.ignition = true;
 
 	const payloadInit = getPayload({
 		imei,
@@ -104,6 +146,8 @@ export const sendPositionTest = async (imei: string) => {
 	emitForUdp(payloadInit);
 	await setDelay(1000);
 
+	// simulate battery on device
+	DEVICE_TEMPLATE.bateryLevel = 80;
 	const payloadBatteryOn = getPayload({
 		imei,
 		lat: firstCoord[1],
@@ -111,9 +155,10 @@ export const sendPositionTest = async (imei: string) => {
 		event: EXTERNAL_BATTERY_ON,
 	});
 	emitForUdp(payloadBatteryOn);
-	await setDelay(1000);
+	await setDelay(2000);
 
 	// simulate sent data location
+	DEVICE_TEMPLATE.speed = '50.00';
 
 	for (const coord of path) {
 		const payload: string = getPayload({
@@ -123,14 +168,34 @@ export const sendPositionTest = async (imei: string) => {
 			event: REPLY_CURRENT_PASSIVE,
 		});
 
-		const gpsMeiData: string = `$$${getPayloadLength(
-			payload
-		)},${payload}*${getChecksumHex(payload)}`;
-
-		emitForUdp(gpsMeiData);
+		emitForUdp(payload);
 
 		await setDelay(1000);
 	}
+
+	const lastCoord = path[path.length - 1];
+
+	// enter sleep
+	DEVICE_TEMPLATE.speed = '0.00';
+	const payloadNewSleep = getPayload({
+		imei,
+		lat: lastCoord[1],
+		lon: lastCoord[0],
+		event: ENTER_SLEEP,
+	});
+	emitForUdp(payloadNewSleep);
+	await setDelay(5000);
+
+	// ingnition off
+	DEVICE_TEMPLATE.ignition = false;
+	const payloadOff = getPayload({
+		imei,
+		lat: lastCoord[1],
+		lon: lastCoord[0],
+		event: IGNITION_OFF,
+	});
+
+	emitForUdp(payloadOff);
 };
 
 const testGraphMovement = async (): Promise<[number, number][]> => {
@@ -145,7 +210,7 @@ const testGraphMovement = async (): Promise<[number, number][]> => {
 	const intermediateNodeList: IGraphWayIntersection[] =
 		await graphWayIntersectionService.findNearbyNodes(
 			START_POINT,
-			Math.floor(totalDistance) * 3
+			Math.floor(totalDistance) * 2
 		);
 
 	let startNode = null;
