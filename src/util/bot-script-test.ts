@@ -1,14 +1,17 @@
 import env from '@config/env';
 import { IGraphWayIntersection } from '@models/schema/graph-way-intersection';
 import dgram from 'node:dgram';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { graphWayIntersectionService } from 'service/database/graph-way-intersection-service';
-import { getDistance } from 'ol/sphere';
 import { deviceEvents } from '@config/device-events';
-import { loggerDebug, loggerError } from '@maur025/core-logger';
+import { loggerDebug, loggerError, loggerWarn } from '@maur025/core-logger';
 import { getNodeId } from 'service/init-way-graph';
+import {
+	lineString as turfLineString,
+	along as turfAlong,
+	distance as turfDistance,
+	length as turfLength,
+} from '@turf/turf';
+import { Feature, LineString, Point } from 'geojson';
 
 const { UDP_HOST, UDP_PORT } = env;
 const {
@@ -129,7 +132,7 @@ const getPayload = ({
 
 export const sendPositionTest = async (imei: string) => {
 	const path = await testGraphMovement();
-	console.log(path);
+	// console.log(path);
 
 	const firstCoord = path[0] ?? [0, 0];
 
@@ -160,19 +163,23 @@ export const sendPositionTest = async (imei: string) => {
 	// simulate sent data location
 	DEVICE_TEMPLATE.speed = '50.00';
 
-	for (const coord of path) {
-		const payload: string = getPayload({
-			imei,
-			lat: coord[1],
-			lon: coord[0],
-			event: REPLY_CURRENT_PASSIVE,
-		});
+	await sendSimulatedCoordinates(path, imei);
 
-		emitForUdp(payload);
+	// ===================================00
+	// for (const coord of path) {
+	// 	const payload: string = getPayload({
+	// 		imei,
+	// 		lat: coord[1],
+	// 		lon: coord[0],
+	// 		event: REPLY_CURRENT_PASSIVE,
+	// 	});
 
-		await setDelay(1000);
-	}
+	// 	emitForUdp(payload);
 
+	// 	await setDelay(1000);
+	// }
+
+	//== move later ==========
 	const lastCoord = path[path.length - 1];
 
 	// enter sleep
@@ -196,10 +203,70 @@ export const sendPositionTest = async (imei: string) => {
 	});
 
 	emitForUdp(payloadOff);
+
+	loggerDebug('path finished ... waiting other operations');
+};
+
+const sendSimulatedCoordinates = async (
+	path: [number, number][],
+	imei: string
+): Promise<void> => {
+	if (path.length <= 1) {
+		loggerWarn(`can't move on array of only coordinate`);
+		return;
+	}
+	const pathEndCoords: [number, number] = path[path.length - 1];
+	const pathLine: Feature<LineString> = turfLineString([...path]);
+
+	const pathLength: number = turfLength(pathLine, { units: 'meters' });
+	console.log(pathLength);
+
+	let remainingDistance: number = 999999999;
+
+	// max speed city = 5 to 15 m/s
+	// masx speed highway = 20 to 30 m/s
+
+	let speed: number = 14; // v = m/s
+	let emitInterval: number = 1; // seconds
+	let currentPosition: number = 0;
+
+	while (remainingDistance > 1) {
+		let stepMeter: number = speed * emitInterval; // v=m/s ==>  m = v * s
+		const speedKmh = speed * 3.6;
+
+		DEVICE_TEMPLATE.speed = speedKmh.toFixed(2);
+
+		currentPosition += stepMeter;
+
+		const deviceStep: Feature<Point> = turfAlong(pathLine, currentPosition, {
+			units: 'meters',
+		});
+
+		const [deviceStepLon = 0, deviceStepLat = 0] =
+			deviceStep?.geometry?.coordinates;
+
+		const payload: string = getPayload({
+			imei,
+			lat: deviceStepLat,
+			lon: deviceStepLon,
+			event: REPLY_CURRENT_PASSIVE,
+		});
+
+		emitForUdp(payload);
+		await setDelay(emitInterval * 1000);
+
+		remainingDistance = turfDistance(
+			deviceStep.geometry?.coordinates,
+			pathEndCoords,
+			{ units: 'meters' }
+		);
+	}
 };
 
 const testGraphMovement = async (): Promise<[number, number][]> => {
-	const totalDistance: number = getDistance(START_POINT, END_POINT);
+	const totalDistance: number = turfDistance(START_POINT, END_POINT, {
+		units: 'meters',
+	});
 
 	const startNodesList: IGraphWayIntersection[] =
 		await graphWayIntersectionService.findNearbyNodes(START_POINT, 10);
@@ -216,7 +283,9 @@ const testGraphMovement = async (): Promise<[number, number][]> => {
 	let startNode = null;
 	let startDistance = 999999999;
 	for (const node of startNodesList) {
-		const distance = getDistance(node.coord.coordinates, START_POINT);
+		const distance: number = turfDistance(node.coord.coordinates, START_POINT, {
+			units: 'meters',
+		});
 
 		if (distance < startDistance) {
 			startDistance = distance;
@@ -227,7 +296,9 @@ const testGraphMovement = async (): Promise<[number, number][]> => {
 	let endNode = null;
 	let endDistance = 999999999;
 	for (const node of endNodeList) {
-		const distance = getDistance(node.coord?.coordinates, END_POINT);
+		const distance = turfDistance(node.coord?.coordinates, END_POINT, {
+			units: 'meters',
+		});
 
 		if (distance < endDistance) {
 			endDistance = distance;
@@ -351,7 +422,7 @@ const heuristic = (pointA: any, pointB: any): number => {
 		coord: { coordinates: coordGoal },
 	} = pointB;
 
-	return getDistance(coordStart, coordGoal);
+	return turfDistance(coordStart, coordGoal, { units: 'meters' });
 };
 
 const buildPath = (node: any): any[] => {
@@ -366,8 +437,12 @@ const buildPath = (node: any): any[] => {
 		const coords = currentNode?.fromWay?.geometry?.coordinates;
 
 		if (coords) {
-			const startDistance = getDistance(nodeCoords, coords[0]);
-			const endDistance = getDistance(nodeCoords, coords[coords.length - 1]);
+			const startDistance = turfDistance(nodeCoords, coords[0], {
+				units: 'meters',
+			});
+			const endDistance = turfDistance(nodeCoords, coords[coords.length - 1], {
+				units: 'meters',
+			});
 
 			if (startDistance < endDistance) {
 				coordsToUse = [...coords];
@@ -378,22 +453,38 @@ const buildPath = (node: any): any[] => {
 			coordsToUse = [nodeCoords];
 		}
 
-		for (const coord of coordsToUse) {
-			const lastCoord = path[path.length - 1];
+		const interpolateCoords: [number, number][] = avoidDuplicates(
+			coordsToUse,
+			path
+		);
 
-			if (
-				!lastCoord ||
-				lastCoord[0] !== coord[0] ||
-				lastCoord[1] !== coord[1]
-			) {
-				path.push(coord);
-			}
-		}
+		path = [...path, ...interpolateCoords];
 
 		currentNode = currentNode.parent;
 	}
 
 	return [...path].reverse();
+};
+
+const avoidDuplicates = (
+	checkCoordList: [number, number][],
+	fullPath: [number, number][]
+): [number, number][] => {
+	if (!fullPath.length) {
+		return [...checkCoordList];
+	}
+
+	const [lastPathLon = 0, lastPathLat = 0] = fullPath[fullPath.length - 1];
+	const [checkLon = 0, checkLat = 0] = checkCoordList[0];
+
+	if (lastPathLat === checkLat && lastPathLon === checkLon) {
+		const updateableList = [...checkCoordList];
+		updateableList.shift();
+
+		return updateableList;
+	}
+
+	return [...checkCoordList];
 };
 
 const heuristicDistanceEuclidiana = (start: any, goal: any): number => {
