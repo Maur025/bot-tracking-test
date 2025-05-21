@@ -6,7 +6,7 @@ export const createKafkaClient = (clientId: string): Kafka => {
 	return new Kafka({
 		clientId,
 		brokers: [env.KAFKA_BROKER],
-		logLevel: logLevel.DEBUG,
+		logLevel: logLevel.INFO,
 		logCreator: () => (entry: LogEntry) =>
 			kafkaLogEntryHandler(entry, `kafka-${clientId}`),
 	});

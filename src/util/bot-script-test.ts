@@ -6,14 +6,35 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { graphWayIntersectionService } from 'service/database/graph-way-intersection-service';
 import { getDistance } from 'ol/sphere';
+import { deviceEvents } from '@config/device-events';
+import { loggerDebug, loggerError } from '@maur025/core-logger';
+import { getNodeId } from 'service/init-way-graph';
 
 const { UDP_HOST, UDP_PORT } = env;
+const {
+	SOS_PRESSED,
+	LOW_BATTERY,
+	LOW_EXTERNAL,
+	SPEEDING,
+	EXTERNAL_BATTERY_ON,
+	EXTERNAL_BATTERY_CUT,
+	GPS_SIGNAL_LOST,
+	GPS_SIGNAL_RECOVERY,
+	ENTER_SLEEP,
+	EXIT_SLEEP,
+	REPLY_CURRENT_PASSIVE,
+	IGNITION_ON,
+	IGNITION_OFF,
+} = deviceEvents;
 
 const udpClient = dgram.createSocket('udp4');
 const cmd: 'GPRMC' | 'AAA' = 'AAA';
 
 const START_POINT: [number, number] = [-68.069209, -16.529014]; // [lon,lat]
-const END_POINT: [number, number] = [-68.131162, -16.535328]; // [lon,lat]
+// const END_POINT: [number, number] = [-68.131162, -16.535328]; // [lon,lat]
+const END_POINT: [number, number] = [-68.078119, -16.53892]; // [lon,lat]
+
+const avaibleNodes: Map<string, any> = new Map();
 
 const getTimestamp = () => {
 	const date = new Date();
@@ -43,75 +64,274 @@ const getChecksumHex = (payload: string): string => {
 	return checksum.toString(16).toUpperCase().padStart(2, '0');
 };
 
+const getPayload = ({
+	imei,
+	lat,
+	lon,
+	event,
+}: {
+	imei: string;
+	lat: number;
+	lon: number;
+	event: string;
+}): string => {
+	return `${imei},${cmd},${event},${lat},${lon},${getTimestamp()},A,0,10,40.00,0,0,0,0,3600,100,1,0,0,0`;
+};
+
 export const sendPositionTest = async (imei: string) => {
-	const __filename = fileURLToPath(import.meta.url);
-	const __dirname = dirname(__filename);
+	// const __filename = fileURLToPath(import.meta.url);
+	// const __dirname = dirname(__filename);
 
-	await testGraphMovement();
+	const path = await testGraphMovement();
+	console.log(path);
 
-	const allWays: { vehicleWays: any[] } = JSON.parse(
-		readFileSync(join(__dirname, '../config/only-vehicle-ways.json'), 'utf8')
-	);
+	// const allWays: { vehicleWays: any[] } = JSON.parse(
+	// 	readFileSync(join(__dirname, '../config/only-vehicle-ways.json'), 'utf8')
+	// );
 
-	for (const way of allWays.vehicleWays) {
-		for (const coord of way.geometry?.coordinates ?? []) {
-			const payload: string = `${imei},${cmd},22,${coord[1]},${
-				coord[0]
-			},${getTimestamp()},A,0,10,40.00,0,0,0,0,3600,100,1,0,0,0`;
+	const firstCoord = path[0] ?? [0, 0];
 
-			const gpsMeiData: string = `$$${getPayloadLength(
-				payload
-			)},${payload}*${getChecksumHex(payload)}`;
+	// simulate ignition device
+	await setDelay(1000);
 
-			emitForUdp(gpsMeiData);
+	const payloadInit = getPayload({
+		imei,
+		lat: firstCoord[1],
+		lon: firstCoord[0],
+		event: IGNITION_ON,
+	});
 
-			await setDelay(1000);
-		}
+	emitForUdp(payloadInit);
+	await setDelay(1000);
+
+	const payloadBatteryOn = getPayload({
+		imei,
+		lat: firstCoord[1],
+		lon: firstCoord[0],
+		event: EXTERNAL_BATTERY_ON,
+	});
+	emitForUdp(payloadBatteryOn);
+	await setDelay(1000);
+
+	// simulate sent data location
+
+	for (const coord of path) {
+		const payload: string = getPayload({
+			imei,
+			lat: coord[1],
+			lon: coord[0],
+			event: REPLY_CURRENT_PASSIVE,
+		});
+
+		const gpsMeiData: string = `$$${getPayloadLength(
+			payload
+		)},${payload}*${getChecksumHex(payload)}`;
+
+		emitForUdp(gpsMeiData);
+
+		await setDelay(1000);
 	}
 };
 
-const testGraphMovement = async () => {
+const testGraphMovement = async (): Promise<[number, number][]> => {
 	const totalDistance: number = getDistance(START_POINT, END_POINT);
-
-	// console.log('TOTAL DISTANCE: ', totalDistance);
 
 	const startNodesList: IGraphWayIntersection[] =
 		await graphWayIntersectionService.findNearbyNodes(START_POINT, 10);
 
-	// console.log('START NODES FOUNDED: ', startNodesList);
-
 	const endNodeList: IGraphWayIntersection[] =
 		await graphWayIntersectionService.findNearbyNodes(END_POINT, 10);
-
-	// console.log('END NODES FOUNDED: ', endNodeList);
 
 	const intermediateNodeList: IGraphWayIntersection[] =
 		await graphWayIntersectionService.findNearbyNodes(
 			START_POINT,
-			totalDistance
+			Math.floor(totalDistance) * 3
 		);
 
-	await aStar({ ...startNodesList[0].toObject() }, intermediateNodeList, {
-		...endNodeList[0].toObject(),
-	});
+	let startNode = null;
+	let startDistance = 999999999;
+	for (const node of startNodesList) {
+		const distance = getDistance(node.coord.coordinates, START_POINT);
 
-	// console.log('INTERMEDIATE NODES FOUNDED: ', intermediateNodeList);
+		if (distance < startDistance) {
+			startDistance = distance;
+			startNode = node.toObject();
+		}
+	}
+
+	let endNode = null;
+	let endDistance = 999999999;
+	for (const node of endNodeList) {
+		const distance = getDistance(node.coord?.coordinates, END_POINT);
+
+		if (distance < endDistance) {
+			endDistance = distance;
+			endNode = node.toObject();
+		}
+	}
+
+	avaibleNodes.set(startNode?.nodeId, startNode);
+	avaibleNodes.set(endNode?.nodeId, endNode);
+
+	for (const node of intermediateNodeList) {
+		if (avaibleNodes.has(node.nodeId)) {
+			continue;
+		}
+
+		avaibleNodes.set(node.nodeId, node.toObject());
+	}
+
+	const currentPoint = await aStar(
+		{ ...startNode },
+		{
+			...endNode,
+		}
+	);
+
+	return buildPath(currentPoint) ?? [];
 };
 
-const aStar = async (start: any, intermediate: any[], goal: any) => {
+const aStar = async (start: any, goal: any): Promise<any> => {
 	// f(n) = g(n) + h(n)
-	let openList = [start, ...intermediate];
-	let closedList = [];
+	let openList = [start];
+	const closedList: Set<string> = new Set<string>();
 
 	start.g = 0;
 	start.h = heuristic(start, goal);
 	start.f = start.g + start.h;
 	start.parent = null;
+	start.fromWay = null;
 
-	console.log(start);
+	// console.log(start);
+	// console.log(avaibleNodes);
+
+	while (openList.length > 0) {
+		// order points/nodes for f value
+		openList.sort((pointA, pointB) => pointA.f - pointB.f);
+
+		// get first element and remove of open list
+		const currentPoint = openList.shift();
+
+		// point not exist must be break process
+		if (!currentPoint) {
+			break;
+		}
+
+		// console.log('CURRENT POINT NODE ID', currentPoint.nodeId);
+		// console.log('GOAL NODE ID', goal.nodeId);
+		// console.log(' ');
+
+		// goal reached if node ids match
+		if (currentPoint.nodeId === goal.nodeId) {
+			loggerDebug('Goal reached GOOD');
+			console.log('Se llego a la meta');
+
+			return currentPoint;
+		}
+
+		// add node to closedList = already review
+		closedList.add(currentPoint.nodeId);
+
+		// console.log('current nodeId', currentPoint.nodeId);
+
+		// iterate of current connections
+		for (const way of currentPoint.connections) {
+			const coords = way.geometry?.coordinates;
+			const startNodeId = getNodeId(coords[0]);
+			const endNodeId = getNodeId(coords[coords.length - 1]);
+
+			for (const neighborId of [startNodeId, endNodeId]) {
+				if (neighborId === currentPoint.nodeId) {
+					continue;
+				}
+
+				if (closedList.has(neighborId)) {
+					continue;
+				}
+
+				const neighbor = avaibleNodes.get(neighborId);
+
+				if (!neighbor) {
+					continue;
+				}
+
+				const tentativeG = currentPoint.g + heuristic(currentPoint, neighbor);
+				// console.log(tentativeG);
+
+				if (neighbor.g === undefined || tentativeG < neighbor.g) {
+					neighbor.g = tentativeG;
+					neighbor.h = heuristic(neighbor, goal);
+					neighbor.f = neighbor.g + neighbor.h;
+					neighbor.parent = currentPoint;
+					neighbor.fromWay = way;
+
+					if (!openList.find(point => point.nodeId === neighbor.nodeId)) {
+						openList.push(neighbor);
+						// console.log('entro a agregar en la lista');
+					}
+				}
+			}
+		}
+	}
+
+	console.log('NO SE ENCONTRO UN CAMINO');
+	return null;
 };
 
-const heuristic = (start: any, goal: any): number => {
+const heuristic = (pointA: any, pointB: any): number => {
+	const {
+		coord: { coordinates: coordStart },
+	} = pointA;
+	const {
+		coord: { coordinates: coordGoal },
+	} = pointB;
+
+	return getDistance(coordStart, coordGoal);
+};
+
+const buildPath = (node: any): any[] => {
+	let currentNode = node;
+
+	let path: [number, number][] = [];
+
+	while (currentNode) {
+		let coordsToUse = [];
+
+		const nodeCoords = currentNode.coord.coordinates;
+		const coords = currentNode?.fromWay?.geometry?.coordinates;
+
+		if (coords) {
+			const startDistance = getDistance(nodeCoords, coords[0]);
+			const endDistance = getDistance(nodeCoords, coords[coords.length - 1]);
+
+			if (startDistance < endDistance) {
+				coordsToUse = [...coords];
+			} else {
+				coordsToUse = [...coords].reverse();
+			}
+		} else {
+			coordsToUse = [nodeCoords];
+		}
+
+		for (const coord of coordsToUse) {
+			const lastCoord = path[path.length - 1];
+
+			if (
+				!lastCoord ||
+				lastCoord[0] !== coord[0] ||
+				lastCoord[1] !== coord[1]
+			) {
+				path.push(coord);
+			}
+		}
+
+		currentNode = currentNode.parent;
+	}
+
+	return [...path].reverse();
+};
+
+const heuristicDistanceEuclidiana = (start: any, goal: any): number => {
 	const { coord: coordStart } = start;
 	const x1 = coordStart.coordinates[0]; // lon
 	const x2 = coordStart.coordinates[1]; // lat
@@ -128,9 +348,9 @@ const emitForUdp = (dataToSend: string) => {
 
 	udpClient.send(message, UDP_PORT, UDP_HOST, error => {
 		if (error) {
-			console.error('Error sending message:', error);
+			loggerError('Error sending message: ', error);
 		} else {
-			console.log(`GPS data send: ${message.toString()}`);
+			loggerDebug(`GPS data send: ${message.toString()}`);
 		}
 	});
 };
