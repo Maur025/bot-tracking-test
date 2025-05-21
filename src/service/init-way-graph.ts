@@ -92,7 +92,7 @@ export const initWayGraph = async () => {
 	}
 };
 
-const getNodeId = (point: [number, number]): string => {
+export const getNodeId = (point: [number, number]): string => {
 	const lon: string = point[0].toFixed(7);
 	const lat: string = point[1].toFixed(7);
 

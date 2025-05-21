@@ -38,6 +38,7 @@ class GraphWayIntersectionService extends BaseService<IGraphWayIntersection> {
 					},
 				},
 			})
+			.populate('connections')
 			.exec();
 	};
 }
