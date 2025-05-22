@@ -3,12 +3,22 @@ import { Request, Response } from 'express';
 import { deviceService } from 'service/database/device-service';
 import { StatusCodes } from 'http-status-codes';
 import { IDevice } from '@models/schema/device-schema';
+import { PaginateResult } from 'mongoose';
 
 class DeviceController {
 	public readonly getAllDevices = async (
 		req: Request,
 		res: Response
 	): Promise<void> => {
+		// console.log(req.params);
+		// console.log(req.body);
+		const { page: qPage = '1', size: qLimit = '10' } = req.query;
+
+		// const deviceList: PaginateResult<IDevice> = await deviceService.findAllPag(
+		// 	{},
+		// 	{ page: Number(qPage), limit: Number(qLimit) }
+		// );
+
 		const deviceList: IDevice[] = await deviceService.findAll();
 
 		MultiResponseBuilder.builder()
@@ -17,6 +27,37 @@ class DeviceController {
 				code: StatusCodes.OK,
 				message: 'SUCCESS',
 				data: [...deviceList],
+				// paginate: {
+				// 	pages: deviceList.totalPages,
+				// 	count: deviceList.totalDocs,
+				// 	page: deviceList.page,
+				// },
+			})
+			.send();
+	};
+
+	public readonly getAllPaginated = async (
+		req: Request,
+		res: Response
+	): Promise<void> => {
+		const { page: qPage = '1', size: qLimit = '10' } = req.query;
+
+		const deviceList: PaginateResult<IDevice> = await deviceService.findAllPag(
+			{},
+			{ page: Number(qPage), limit: Number(qLimit) }
+		);
+
+		MultiResponseBuilder.builder()
+			.res(res)
+			.withResponse({
+				code: StatusCodes.OK,
+				message: 'SUCCESS',
+				data: [...deviceList.docs],
+				paginate: {
+					pages: deviceList.totalPages,
+					count: deviceList.totalDocs,
+					page: deviceList.page,
+				},
 			})
 			.send();
 	};

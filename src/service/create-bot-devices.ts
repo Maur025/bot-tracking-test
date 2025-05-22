@@ -26,6 +26,7 @@ export const createBotDevices = async (quantity: number): Promise<void> => {
 					referenceCaptureId: Number(imeiStr).toString(16),
 					name: `device-bot ${generatedNumber}`,
 					plaque: 'ABC 1234',
+					icon: 'fa-car-side',
 				});
 
 				isWellCreated = true;

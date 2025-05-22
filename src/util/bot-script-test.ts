@@ -1,6 +1,4 @@
-import env from '@config/env';
 import { IGraphWayIntersection } from '@models/schema/graph-way-intersection';
-import dgram from 'node:dgram';
 import { graphWayIntersectionService } from 'service/database/graph-way-intersection-service';
 import { deviceEvents } from '@config/device-events';
 import { loggerDebug, loggerError, loggerWarn } from '@maur025/core-logger';
@@ -13,7 +11,6 @@ import {
 } from '@turf/turf';
 import { Feature, LineString, Point } from 'geojson';
 
-const { UDP_HOST, UDP_PORT } = env;
 const {
 	SOS_PRESSED,
 	LOW_BATTERY,
@@ -30,105 +27,11 @@ const {
 	IGNITION_OFF,
 } = deviceEvents;
 
-const udpClient = dgram.createSocket('udp4');
-
 const START_POINT: [number, number] = [-68.069209, -16.529014]; // [lon,lat]
 // const END_POINT: [number, number] = [-68.131162, -16.535328]; // [lon,lat]
 const END_POINT: [number, number] = [-68.078119, -16.53892]; // [lon,lat]
 
 const avaibleNodes: Map<string, any> = new Map();
-
-const getTimestamp = () => {
-	const date = new Date();
-
-	const year = String(date.getUTCFullYear()).slice(2);
-	const month = String(date.getMonth() + 1).padStart(2, '0');
-	const day = String(date.getDate()).padStart(2, '0');
-	const hours = String(date.getUTCHours()).padStart(2, '0');
-	const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-	const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-	const miliseconds = String(date.getUTCMilliseconds()).padStart(3, '0');
-
-	return `${year}${month}${day}${hours}${minutes}${seconds}${miliseconds}`;
-};
-
-const getPayloadLength = (payload: string): string => {
-	return payload.length?.toString();
-};
-
-const getChecksumHex = (payload: string): string => {
-	let checksum: number = 0;
-
-	for (let i = 0; i < payload.length; i++) {
-		checksum ^= payload.charCodeAt(i);
-	}
-
-	return checksum.toString(16).toUpperCase().padStart(2, '0');
-};
-
-const DEVICE_TEMPLATE: {
-	cmd: 'GPRMC' | 'AAA';
-	stateGps: 'A';
-	usedSatellites: number;
-	acc: number;
-	speed: string; // -> format 00.00
-	odometer: number; // -> quantity km traveled
-	bateryLevel: number; // -> percentage or mv
-	ignition: boolean; // boolean to clarity -> convert in 0 or 1
-	analog: number;
-	einfo: number;
-	custom: number;
-} = {
-	// imei
-	cmd: 'AAA',
-	// event
-	// coords
-	// date
-	stateGps: 'A',
-	usedSatellites: 0,
-	acc: 10,
-	speed: '0.00',
-	odometer: 3600,
-	bateryLevel: 0,
-	ignition: false,
-	analog: 0,
-	einfo: 0,
-	custom: 0,
-};
-
-const getPayload = ({
-	imei,
-	lat,
-	lon,
-	event,
-}: {
-	imei: string;
-	lat: number;
-	lon: number;
-	event: string;
-}): string => {
-	const {
-		cmd,
-		stateGps,
-		usedSatellites,
-		acc,
-		speed,
-		odometer,
-		bateryLevel,
-		ignition,
-		analog,
-		einfo,
-		custom,
-	} = DEVICE_TEMPLATE;
-
-	const payloadBody: string = `${imei},${cmd},${event},${lat},${lon},${getTimestamp()},${stateGps},${usedSatellites},${acc},${speed},0,0,0,0,${odometer},${bateryLevel},${
-		ignition ? '1' : '0'
-	},${analog},${einfo},${custom}`;
-
-	return `$$${getPayloadLength(payloadBody)},${payloadBody}*${getChecksumHex(
-		payloadBody
-	)}`;
-};
 
 export const sendPositionTest = async (imei: string) => {
 	const path = await testGraphMovement();
@@ -498,18 +401,3 @@ const heuristicDistanceEuclidiana = (start: any, goal: any): number => {
 
 	return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 };
-
-const emitForUdp = (dataToSend: string) => {
-	const message = Buffer.from(dataToSend, 'ascii');
-
-	udpClient.send(message, UDP_PORT, UDP_HOST, error => {
-		if (error) {
-			loggerError('Error sending message: ', error);
-		} else {
-			loggerDebug(`GPS data send: ${message.toString()}`);
-		}
-	});
-};
-
-const setDelay = (ms: number) =>
-	new Promise(resolve => setTimeout(resolve, ms));

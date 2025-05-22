@@ -10,10 +10,16 @@ import { setupMaster } from '@socket.io/sticky';
 import { setupPrimary } from '@socket.io/cluster-adapter';
 import env from '@config/env';
 import { initializeBotDevice } from 'service/initialize-bot-device';
-import { connectToDabase } from '@config/database/database-config';
+import {
+	connectToDabase,
+	disconnectDatabase,
+} from '@config/database/database-config';
 import { initWayGraph } from 'service/init-way-graph';
-import { initRedisClient } from '@config/redis/create-redis-client';
+import redisClient, {
+	initRedisClient,
+} from '@config/redis/create-redis-client';
 import { registerWayToDatabase } from 'service/register-way-to-database';
+import { cleanDeviceBot } from 'service/clean-device-bot';
 
 const numberCpus = cpus().length;
 
@@ -61,6 +67,35 @@ if (cluster.isPrimary && numberCpus > 2) {
 
 	await initWayGraph();
 	await initializeBotDevice();
+
+	process.on('SIGINT', async () => {
+		await cleanDeviceBot();
+		await disconnectDatabase();
+
+		if (redisClient) {
+			await redisClient.quit();
+		}
+
+		httpServer.close();
+		process.exit(0);
+	});
+
+	process.on('SIGTERM', async () => {
+		await cleanDeviceBot();
+		await disconnectDatabase();
+
+		if (redisClient?.isOpen) {
+			await redisClient.quit();
+		}
+
+		httpServer.close();
+		process.exit(0);
+	});
+
+	process.on('exit', () => {
+		loggerInfo(`[primary] server shutdown with safe exit`);
+		process.exit(0);
+	});
 } else {
 	await import('./index');
 }
