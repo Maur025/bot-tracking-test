@@ -15,6 +15,7 @@ export interface IDevice extends BaseDocument {
 	name: string;
 	status: DeviceStatus;
 	plaque: string;
+	icon?: string;
 }
 
 const DeviceSchema = new Schema<IDevice>(
@@ -38,6 +39,9 @@ const DeviceSchema = new Schema<IDevice>(
 			default: DeviceStatus.ENABLE,
 		},
 		plaque: {
+			type: String,
+		},
+		icon: {
 			type: String,
 		},
 	},

@@ -2,6 +2,9 @@ import { sendPositionTest } from 'util/bot-script-test';
 import { EachMessagePayload } from 'kafkajs';
 import { IDevice } from '@models/schema/device-schema';
 import { getPayloadKafka } from 'util/json-util';
+import redisClient from '@config/redis/create-redis-client';
+import { DeviceBotCache } from '@models/data/device-bot-cache';
+import { simulateDeviceMovement } from 'service/simulate-movement/simulate-device-movement';
 
 export const deviceInitConsumerHandler = async ({
 	topic,
@@ -14,5 +17,31 @@ export const deviceInitConsumerHandler = async ({
 		return;
 	}
 
-	sendPositionTest(device.imei);
+	const deviceBotCache: DeviceBotCache = {
+		id: device._id,
+		referenceCaptureId: device.referenceCaptureId,
+		name: device.name,
+		imei: device.imei,
+		cmd: 'AAA',
+		event: '0',
+		lat: '0',
+		lon: '0',
+		date: '',
+		stateGps: 'A',
+		usedSatellites: '0',
+		acc: '10',
+		speed: '0.00',
+		odometer: '0',
+		bateryLevel: '0',
+		ignition: '0',
+		analog: '0',
+		einfo: '0',
+		custom: '0',
+		running: 'true',
+	};
+
+	await redisClient.hSet(`device-bot:${device._id}`, { ...deviceBotCache });
+
+	// sendPositionTest(device.imei);
+	simulateDeviceMovement({ deviceId: device._id });
 };

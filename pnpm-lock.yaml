@@ -15,8 +15,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@maur025/core-model-data':
-        specifier: ^1.1.1
-        version: 1.1.1
+        specifier: ^1.2.0
+        version: 1.2.0
       '@socket.io/cluster-adapter':
         specifier: ^0.2.2
         version: 0.2.2(socket.io-adapter@2.5.5)
@@ -261,8 +261,8 @@ packages:
     resolution: {integrity: sha512-YaTpVnwyzW1ikOLFLZuZMftKc1+W6AJXdZ/+TbydlRSG7H882XYdMYcuHCSrrHB9JGEpRW5e5WSHKOo/UHj7YA==}
     engines: {node: '>=18'}
 
-  '@maur025/core-model-data@1.1.1':
-    resolution: {integrity: sha512-ol4gD8d1DqPJoU8cNdBrqW86p3fDP6+vr+OgUteZIQlEAZKt9Mnz13DmJkHncEO0GsYrl5ZxRsQqh8kJBuHkgQ==}
+  '@maur025/core-model-data@1.2.0':
+    resolution: {integrity: sha512-KZbZ7YsKLZoWXJEO0a55rG6p0rf/MlGmd3vEtxCIoJ6rk/utPmpeNmdc7xs0AQ0jj/+KfqEWZAqPF12mAuFm6A==}
     engines: {node: '>=18'}
 
   '@mongodb-js/saslprep@1.2.2':
@@ -1519,8 +1519,8 @@ packages:
     resolution: {integrity: sha512-TEU+nJVUUnA4CYJFLvK5X9AOeH4KvDvhIfm0vV1GaQRtchnG0hgK5p8hw/xjv8cunWYCsiPCSDzObPyhEwq3KQ==}
     engines: {node: '>=0.4.0'}
 
-  zod@3.24.4:
-    resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
+  zod@3.25.20:
+    resolution: {integrity: sha512-z03fqpTMDF1G02VLKUMt6vyACE7rNWkh3gpXVHgPTw28NPtDFRGvcpTtPwn2kMKtQ0idtYJUTxchytmnqYswcw==}
 
 snapshots:
 
@@ -1614,9 +1614,9 @@ snapshots:
       chalk: 5.4.1
       winston: 3.17.0
 
-  '@maur025/core-model-data@1.1.1':
+  '@maur025/core-model-data@1.2.0':
     dependencies:
-      zod: 3.24.4
+      zod: 3.25.20
 
   '@mongodb-js/saslprep@1.2.2':
     dependencies:
@@ -3693,4 +3693,4 @@ snapshots:
 
   xmlhttprequest-ssl@2.1.2: {}
 
-  zod@3.24.4: {}
+  zod@3.25.20: {}

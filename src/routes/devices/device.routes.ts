@@ -3,6 +3,7 @@ import { Router } from 'express';
 
 const router = Router();
 
-router.get('/', deviceController.getAllDevices);
+router.get('/', deviceController.getAllPaginated);
+router.get('/all', deviceController.getAllDevices);
 
 export default router;
