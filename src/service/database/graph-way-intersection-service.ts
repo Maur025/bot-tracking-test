@@ -4,6 +4,7 @@ import {
 } from '@models/schema/graph-way-intersection';
 import { BaseService } from './base-service';
 import { Model } from 'mongoose';
+import { Position } from 'geojson';
 
 class GraphWayIntersectionService extends BaseService<IGraphWayIntersection> {
 	protected serviceModel(): Model<IGraphWayIntersection> {
@@ -21,7 +22,7 @@ class GraphWayIntersectionService extends BaseService<IGraphWayIntersection> {
 	};
 
 	public readonly findNearbyNodes = async (
-		point: [number, number],
+		position: Position,
 		maxDistance: number,
 		minDistance: number = 0
 	): Promise<IGraphWayIntersection[]> => {
@@ -31,7 +32,7 @@ class GraphWayIntersectionService extends BaseService<IGraphWayIntersection> {
 					$near: {
 						$geometry: {
 							type: 'Point',
-							coordinates: point,
+							coordinates: position,
 						},
 						$maxDistance: maxDistance,
 						$minDistance: minDistance,
@@ -39,6 +40,25 @@ class GraphWayIntersectionService extends BaseService<IGraphWayIntersection> {
 				},
 			})
 			.populate('connections')
+			.exec();
+	};
+
+	public readonly findNearby = async (
+		position: Position,
+		limit: number = 1
+	): Promise<IGraphWayIntersection[]> => {
+		return this.serviceModel()
+			.find({
+				coord: {
+					$near: {
+						$geometry: {
+							type: 'Point',
+							coordinates: position,
+						},
+					},
+				},
+			})
+			.limit(limit)
 			.exec();
 	};
 }

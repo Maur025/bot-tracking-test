@@ -1,4 +1,4 @@
-const transitArea = {
+export const transitArea: any = {
 	bottomRight: { lon: -68.03279236579559, lat: -16.557825307402226 },
 	topRight: {
 		lon: -68.03279236579559,

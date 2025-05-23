@@ -1,4 +1,3 @@
-import { sendPositionTest } from 'util/bot-script-test';
 import { EachMessagePayload } from 'kafkajs';
 import { IDevice } from '@models/schema/device-schema';
 import { getPayloadKafka } from 'util/json-util';
@@ -17,6 +16,8 @@ export const deviceInitConsumerHandler = async ({
 		return;
 	}
 
+	const [lon = 0, lat = 0] = device.lastPosition?.coordinates;
+
 	const deviceBotCache: DeviceBotCache = {
 		id: device._id,
 		referenceCaptureId: device.referenceCaptureId,
@@ -24,8 +25,8 @@ export const deviceInitConsumerHandler = async ({
 		imei: device.imei,
 		cmd: 'AAA',
 		event: '0',
-		lat: '0',
-		lon: '0',
+		lat: lat.toString(),
+		lon: lon.toString(),
 		date: '',
 		stateGps: 'A',
 		usedSatellites: '0',

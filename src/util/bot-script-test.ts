@@ -9,7 +9,7 @@ import {
 	distance as turfDistance,
 	length as turfLength,
 } from '@turf/turf';
-import { Feature, LineString, Point } from 'geojson';
+import { Feature, LineString, Point, Position } from 'geojson';
 
 const {
 	SOS_PRESSED,
@@ -34,40 +34,32 @@ const END_POINT: [number, number] = [-68.078119, -16.53892]; // [lon,lat]
 const avaibleNodes: Map<string, any> = new Map();
 
 export const sendPositionTest = async (imei: string) => {
-	const path = await testGraphMovement();
+	// const path = await testGraphMovement();
 	// console.log(path);
-
-	const firstCoord = path[0] ?? [0, 0];
-
-	// simulate ignition device
-	DEVICE_TEMPLATE.ignition = true;
-
-	const payloadInit = getPayload({
-		imei,
-		lat: firstCoord[1],
-		lon: firstCoord[0],
-		event: IGNITION_ON,
-	});
-
-	emitForUdp(payloadInit);
-	await setDelay(1000);
-
-	// simulate battery on device
-	DEVICE_TEMPLATE.bateryLevel = 80;
-	const payloadBatteryOn = getPayload({
-		imei,
-		lat: firstCoord[1],
-		lon: firstCoord[0],
-		event: EXTERNAL_BATTERY_ON,
-	});
-	emitForUdp(payloadBatteryOn);
-	await setDelay(2000);
-
-	// simulate sent data location
-	DEVICE_TEMPLATE.speed = '50.00';
-
-	await sendSimulatedCoordinates(path, imei);
-
+	// const firstCoord = path[0] ?? [0, 0];
+	// // simulate ignition device
+	// DEVICE_TEMPLATE.ignition = true;
+	// const payloadInit = getPayload({
+	// 	imei,
+	// 	lat: firstCoord[1],
+	// 	lon: firstCoord[0],
+	// 	event: IGNITION_ON,
+	// });
+	// emitForUdp(payloadInit);
+	// await setDelay(1000);
+	// // simulate battery on device
+	// DEVICE_TEMPLATE.bateryLevel = 80;
+	// const payloadBatteryOn = getPayload({
+	// 	imei,
+	// 	lat: firstCoord[1],
+	// 	lon: firstCoord[0],
+	// 	event: EXTERNAL_BATTERY_ON,
+	// });
+	// emitForUdp(payloadBatteryOn);
+	// await setDelay(2000);
+	// // simulate sent data location
+	// DEVICE_TEMPLATE.speed = '50.00';
+	// await sendSimulatedCoordinates(path, imei);
 	// ===================================00
 	// for (const coord of path) {
 	// 	const payload: string = getPayload({
@@ -76,106 +68,102 @@ export const sendPositionTest = async (imei: string) => {
 	// 		lon: coord[0],
 	// 		event: REPLY_CURRENT_PASSIVE,
 	// 	});
-
 	// 	emitForUdp(payload);
-
 	// 	await setDelay(1000);
 	// }
-
 	//== move later ==========
-	const lastCoord = path[path.length - 1];
-
-	// enter sleep
-	DEVICE_TEMPLATE.speed = '0.00';
-	const payloadNewSleep = getPayload({
-		imei,
-		lat: lastCoord[1],
-		lon: lastCoord[0],
-		event: ENTER_SLEEP,
-	});
-	emitForUdp(payloadNewSleep);
-	await setDelay(5000);
-
-	// ingnition off
-	DEVICE_TEMPLATE.ignition = false;
-	const payloadOff = getPayload({
-		imei,
-		lat: lastCoord[1],
-		lon: lastCoord[0],
-		event: IGNITION_OFF,
-	});
-
-	emitForUdp(payloadOff);
-
-	loggerDebug('path finished ... waiting other operations');
+	// const lastCoord = path[path.length - 1];
+	// // enter sleep
+	// DEVICE_TEMPLATE.speed = '0.00';
+	// const payloadNewSleep = getPayload({
+	// 	imei,
+	// 	lat: lastCoord[1],
+	// 	lon: lastCoord[0],
+	// 	event: ENTER_SLEEP,
+	// });
+	// emitForUdp(payloadNewSleep);
+	// await setDelay(5000);
+	// // ingnition off
+	// DEVICE_TEMPLATE.ignition = false;
+	// const payloadOff = getPayload({
+	// 	imei,
+	// 	lat: lastCoord[1],
+	// 	lon: lastCoord[0],
+	// 	event: IGNITION_OFF,
+	// });
+	// emitForUdp(payloadOff);
+	// loggerDebug('path finished ... waiting other operations');
 };
 
-const sendSimulatedCoordinates = async (
-	path: [number, number][],
-	imei: string
-): Promise<void> => {
-	if (path.length <= 1) {
-		loggerWarn(`can't move on array of only coordinate`);
-		return;
-	}
-	const pathEndCoords: [number, number] = path[path.length - 1];
-	const pathLine: Feature<LineString> = turfLineString([...path]);
+// const sendSimulatedCoordinates = async (
+// 	path: [number, number][],
+// 	imei: string
+// ): Promise<void> => {
+// 	if (path.length <= 1) {
+// 		loggerWarn(`can't move on array of only coordinate`);
+// 		return;
+// 	}
+// 	const pathEndCoords: [number, number] = path[path.length - 1];
+// 	const pathLine: Feature<LineString> = turfLineString([...path]);
 
-	const pathLength: number = turfLength(pathLine, { units: 'meters' });
-	console.log(pathLength);
+// 	const pathLength: number = turfLength(pathLine, { units: 'meters' });
+// 	console.log(pathLength);
 
-	let remainingDistance: number = 999999999;
+// 	let remainingDistance: number = 999999999;
 
-	// max speed city = 5 to 15 m/s
-	// masx speed highway = 20 to 30 m/s
+// 	// max speed city = 5 to 15 m/s
+// 	// masx speed highway = 20 to 30 m/s
 
-	let speed: number = 14; // v = m/s
-	let emitInterval: number = 1; // seconds
-	let currentPosition: number = 0;
+// 	let speed: number = 14; // v = m/s
+// 	let emitInterval: number = 1; // seconds
+// 	let currentPosition: number = 0;
 
-	while (remainingDistance > 1) {
-		let stepMeter: number = speed * emitInterval; // v=m/s ==>  m = v * s
-		const speedKmh = speed * 3.6;
+// 	while (remainingDistance > 1) {
+// 		let stepMeter: number = speed * emitInterval; // v=m/s ==>  m = v * s
+// 		const speedKmh = speed * 3.6;
 
-		DEVICE_TEMPLATE.speed = speedKmh.toFixed(2);
+// 		DEVICE_TEMPLATE.speed = speedKmh.toFixed(2);
 
-		currentPosition += stepMeter;
+// 		currentPosition += stepMeter;
 
-		const deviceStep: Feature<Point> = turfAlong(pathLine, currentPosition, {
-			units: 'meters',
-		});
+// 		const deviceStep: Feature<Point> = turfAlong(pathLine, currentPosition, {
+// 			units: 'meters',
+// 		});
 
-		const [deviceStepLon = 0, deviceStepLat = 0] =
-			deviceStep?.geometry?.coordinates;
+// 		const [deviceStepLon = 0, deviceStepLat = 0] =
+// 			deviceStep?.geometry?.coordinates;
 
-		const payload: string = getPayload({
-			imei,
-			lat: deviceStepLat,
-			lon: deviceStepLon,
-			event: REPLY_CURRENT_PASSIVE,
-		});
+// 		const payload: string = getPayload({
+// 			imei,
+// 			lat: deviceStepLat,
+// 			lon: deviceStepLon,
+// 			event: REPLY_CURRENT_PASSIVE,
+// 		});
 
-		emitForUdp(payload);
-		await setDelay(emitInterval * 1000);
+// 		emitForUdp(payload);
+// 		await setDelay(emitInterval * 1000);
 
-		remainingDistance = turfDistance(
-			deviceStep.geometry?.coordinates,
-			pathEndCoords,
-			{ units: 'meters' }
-		);
-	}
-};
+// 		remainingDistance = turfDistance(
+// 			deviceStep.geometry?.coordinates,
+// 			pathEndCoords,
+// 			{ units: 'meters' }
+// 		);
+// 	}
+// };
 
-const testGraphMovement = async (): Promise<[number, number][]> => {
-	const totalDistance: number = turfDistance(START_POINT, END_POINT, {
+export const testGraphMovement = async (
+	startPoint: Position,
+	endPoint: Position
+): Promise<[number, number][]> => {
+	const totalDistance: number = turfDistance(startPoint, endPoint, {
 		units: 'meters',
 	});
 
 	const startNodesList: IGraphWayIntersection[] =
-		await graphWayIntersectionService.findNearbyNodes(START_POINT, 10);
+		await graphWayIntersectionService.findNearbyNodes(START_POINT, 100);
 
 	const endNodeList: IGraphWayIntersection[] =
-		await graphWayIntersectionService.findNearbyNodes(END_POINT, 10);
+		await graphWayIntersectionService.findNearbyNodes(END_POINT, 100);
 
 	const intermediateNodeList: IGraphWayIntersection[] =
 		await graphWayIntersectionService.findNearbyNodes(
@@ -208,6 +196,9 @@ const testGraphMovement = async (): Promise<[number, number][]> => {
 			endNode = node.toObject();
 		}
 	}
+
+	loggerDebug(`NODO INICIAL: ${startNode}`);
+	loggerDebug(`NODO FINAL: ${endNode}`);
 
 	avaibleNodes.set(startNode?.nodeId, startNode);
 	avaibleNodes.set(endNode?.nodeId, endNode);

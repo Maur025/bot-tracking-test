@@ -1,6 +1,7 @@
 import { IWay, Way } from '@models/schema/way-schema';
 import { BaseService } from './base-service';
-import { Model, Document } from 'mongoose';
+import { Model } from 'mongoose';
+import { Position } from 'geojson';
 
 class WayService extends BaseService<IWay> {
 	protected serviceModel(): Model<IWay> {
@@ -8,8 +9,7 @@ class WayService extends BaseService<IWay> {
 	}
 
 	public readonly getLineIntersects = async (
-		startPoint: [number, number],
-		endPoint: [number, number]
+		wayLine: Position[]
 	): Promise<IWay[]> => {
 		return this.serviceModel()
 			.find({
@@ -17,7 +17,7 @@ class WayService extends BaseService<IWay> {
 					$geoIntersects: {
 						$geometry: {
 							type: 'LineString',
-							coordinates: [startPoint, endPoint],
+							coordinates: wayLine,
 						},
 					},
 				},
@@ -44,6 +44,26 @@ class WayService extends BaseService<IWay> {
 					},
 				},
 			})
+			.exec();
+	};
+
+	public readonly findNearby = async (
+		position: [number, number]
+	): Promise<IWay[]> => {
+		return this.serviceModel()
+			.aggregate([
+				{
+					$geoNear: {
+						near: {
+							type: 'Point',
+							coordinates: position,
+						},
+						distanceField: 'distance',
+						spherical: true,
+					},
+				},
+				{ $limit: 1 },
+			])
 			.exec();
 	};
 }
