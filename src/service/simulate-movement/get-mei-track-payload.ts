@@ -5,12 +5,10 @@ import { getMeiTrackDate } from 'util/get-mei-track-date';
 import { getMeiTrackPayloadLength } from 'util/get-mei-track-payload-length';
 
 interface Request {
-	deviceId: string;
+	key: string;
 }
 
-export const getMeiTrackPayload = async ({
-	deviceId,
-}: Request): Promise<string> => {
+export const getMeiTrackPayload = async ({ key }: Request): Promise<string> => {
 	const {
 		imei,
 		cmd,
@@ -27,15 +25,13 @@ export const getMeiTrackPayload = async ({
 		analog,
 		einfo,
 		custom,
-	}: Partial<DeviceBotCache> = await redisClient.hGetAll(
-		`device-bot:${deviceId}`
-	);
+	}: Partial<DeviceBotCache> = await redisClient.hGetAll(key);
 
 	const dateFormated: string = getMeiTrackDate();
 
 	const payloadBody: string = `${imei},${cmd},${event},${lat},${lon},${dateFormated},${stateGps},${usedSatellites},${acc},${speed},0,0,0,0,${odometer},${bateryLevel},${ignition},${analog},${einfo},${custom}`;
 
-	await redisClient.hSet(`device-bot:${deviceId}`, 'date', dateFormated);
+	await redisClient.hSet(key, 'date', dateFormated);
 
 	return `$$${getMeiTrackPayloadLength(
 		payloadBody

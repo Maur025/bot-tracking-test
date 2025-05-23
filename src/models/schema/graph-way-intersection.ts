@@ -42,6 +42,7 @@ const GraphWayIntersectionSchema = new Schema<IGraphWayIntersection>(
 );
 
 GraphWayIntersectionSchema.index({ coord: '2dsphere' });
+GraphWayIntersectionSchema.index({ nodeId: 1 }, { unique: true });
 GraphWayIntersectionSchema.plugin(moongosePaginate);
 
 export const graphWayIntersection = model<

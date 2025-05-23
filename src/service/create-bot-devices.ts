@@ -27,6 +27,10 @@ export const createBotDevices = async (quantity: number): Promise<void> => {
 					name: `device-bot ${generatedNumber}`,
 					plaque: 'ABC 1234',
 					icon: 'fa-car-side',
+					lastPosition: {
+						type: 'Point',
+						coordinates: [0, 0],
+					},
 				});
 
 				isWellCreated = true;
