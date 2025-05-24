@@ -27,9 +27,9 @@ const {
 	IGNITION_OFF,
 } = deviceEvents;
 
-const START_POINT: [number, number] = [-68.069209, -16.529014]; // [lon,lat]
-// const END_POINT: [number, number] = [-68.131162, -16.535328]; // [lon,lat]
-const END_POINT: [number, number] = [-68.078119, -16.53892]; // [lon,lat]
+// const START_POINT: [number, number] = [-68.069209, -16.529014]; // [lon,lat]
+// // const END_POINT: [number, number] = [-68.131162, -16.535328]; // [lon,lat]
+// const END_POINT: [number, number] = [-68.078119, -16.53892]; // [lon,lat]
 
 const avaibleNodes: Map<string, any> = new Map();
 
@@ -160,45 +160,23 @@ export const testGraphMovement = async (
 	});
 
 	const startNodesList: IGraphWayIntersection[] =
-		await graphWayIntersectionService.findNearbyNodes(START_POINT, 100);
+		await graphWayIntersectionService.findNearby({
+			position: startPoint,
+		});
 
 	const endNodeList: IGraphWayIntersection[] =
-		await graphWayIntersectionService.findNearbyNodes(END_POINT, 100);
+		await graphWayIntersectionService.findNearby({
+			position: endPoint,
+		});
 
 	const intermediateNodeList: IGraphWayIntersection[] =
-		await graphWayIntersectionService.findNearbyNodes(
-			START_POINT,
-			Math.floor(totalDistance) * 2
-		);
-
-	let startNode = null;
-	let startDistance = 999999999;
-	for (const node of startNodesList) {
-		const distance: number = turfDistance(node.coord.coordinates, START_POINT, {
-			units: 'meters',
+		await graphWayIntersectionService.findNearbiesByDistance({
+			position: startPoint,
+			maxDistance: Math.floor(totalDistance) * 1.25,
 		});
 
-		if (distance < startDistance) {
-			startDistance = distance;
-			startNode = node.toObject();
-		}
-	}
-
-	let endNode = null;
-	let endDistance = 999999999;
-	for (const node of endNodeList) {
-		const distance = turfDistance(node.coord?.coordinates, END_POINT, {
-			units: 'meters',
-		});
-
-		if (distance < endDistance) {
-			endDistance = distance;
-			endNode = node.toObject();
-		}
-	}
-
-	loggerDebug(`NODO INICIAL: ${startNode}`);
-	loggerDebug(`NODO FINAL: ${endNode}`);
+	const startNode = startNodesList[0].toObject();
+	const endNode = endNodeList[0].toObject();
 
 	avaibleNodes.set(startNode?.nodeId, startNode);
 	avaibleNodes.set(endNode?.nodeId, endNode);
