@@ -1,5 +1,5 @@
 import { wayService } from './database/way-service';
-import { PaginateResult, Types } from 'mongoose';
+import { PaginateResult } from 'mongoose';
 import { IWay } from '@models/schema/way-schema';
 import { graphWayIntersectionService } from './database/graph-way-intersection-service';
 import { loggerDebug, loggerInfo } from '@maur025/core-logger';
@@ -74,10 +74,10 @@ export const initWayGraph = async () => {
 						await graphWayIntersectionService.findByNodeId(nodeId);
 
 					const nearbyNodes: IGraphWayIntersection[] =
-						await graphWayIntersectionService.findNearby(
-							intersectionPointCoords,
-							10
-						);
+						await graphWayIntersectionService.findNearby({
+							position: intersectionPointCoords,
+							limit: 10,
+						});
 
 					const nearbyNodeIds: string[] = nearbyNodes
 						.map(node => node.nodeId)
@@ -119,53 +119,3 @@ export const getNodeId = (point: Position): string => {
 
 	return `${lon}/${lat}`;
 };
-
-// const startPoint: [number, number] = coords[0];
-// const endPoint: [number, number] = coords[coords.length - 1];
-
-// if (startPoint[0] === endPoint[0] && startPoint[1] === endPoint[1]) {
-// 	continue;
-// }
-
-// const startIntersectWays: IWay[] = await wayService.getWayNearbyByPoint({
-// 	point: startPoint,
-// 	distance: MAX_DISTANCE,
-// });
-
-// const endIntersectWays: IWay[] = await wayService.getWayNearbyByPoint({
-// 	point: endPoint,
-// 	distance: MAX_DISTANCE,
-// });
-
-// const startNodeId: string = getNodeId(startPoint);
-// const endNodeId: string = getNodeId(endPoint);
-
-// const startGraphFound = await graphWayIntersectionService.findByNodeId(
-// 	startNodeId
-// );
-
-// const endGraphFound = await graphWayIntersectionService.findByNodeId(
-// 	endNodeId
-// );
-
-// if (!startGraphFound) {
-// 	await graphWayIntersectionService.save({
-// 		nodeId: startNodeId,
-// 		coord: {
-// 			type: 'Point',
-// 			coordinates: startPoint,
-// 		},
-// 		connections: startIntersectWays.map(intersect => intersect._id),
-// 	});
-// }
-
-// if (!endGraphFound) {
-// 	await graphWayIntersectionService.save({
-// 		nodeId: endNodeId,
-// 		coord: {
-// 			type: 'Point',
-// 			coordinates: endPoint,
-// 		},
-// 		connections: endIntersectWays.map(intersect => intersect._id),
-// 	});
-// }

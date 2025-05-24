@@ -21,6 +21,7 @@ class GraphWayIntersectionService extends BaseService<IGraphWayIntersection> {
 			.exec();
 	};
 
+	// review use
 	public readonly findNearbyNodes = async (
 		position: Position,
 		maxDistance: number,
@@ -43,10 +44,14 @@ class GraphWayIntersectionService extends BaseService<IGraphWayIntersection> {
 			.exec();
 	};
 
-	public readonly findNearby = async (
-		position: Position,
-		limit: number = 1
-	): Promise<IGraphWayIntersection[]> => {
+	// review use
+	public readonly findNearby = async ({
+		position,
+		limit = 1,
+	}: {
+		position: Position;
+		limit?: number;
+	}): Promise<IGraphWayIntersection[]> => {
 		return this.serviceModel()
 			.find({
 				coord: {
@@ -60,6 +65,38 @@ class GraphWayIntersectionService extends BaseService<IGraphWayIntersection> {
 			})
 			.limit(limit)
 			.exec();
+	};
+
+	public readonly findNearbiesByDistance = ({
+		position,
+		maxDistance,
+		limit = 0,
+	}: {
+		position: Position;
+		maxDistance: number;
+		limit?: number;
+	}): Promise<IGraphWayIntersection[]> => {
+		let pipeline: any[] = [
+			{
+				$geoNear: {
+					near: { type: 'Point', coordinates: [position[0], position[1]] },
+					distanceField: 'distance',
+					spherical: true,
+					maxDistance,
+				},
+			},
+		];
+
+		if (limit > 0) {
+			pipeline = [
+				...pipeline,
+				{
+					$limit: limit,
+				},
+			];
+		}
+
+		return this.serviceModel().aggregate(pipeline);
 	};
 }
 
