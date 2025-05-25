@@ -12,7 +12,7 @@ export const initializeBotDevice = async (): Promise<void> => {
 
 	const deviceList: IDevice[] =
 		DEVICE_QUANTITY < registerDeviceQuantity
-			? await (
+			? (
 					await deviceService.findAllPag(
 						{},
 						{ page: 1, limit: DEVICE_QUANTITY }

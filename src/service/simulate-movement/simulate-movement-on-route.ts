@@ -1,8 +1,9 @@
-import { Point, Position } from 'geojson';
+import { Position } from 'geojson';
 import { generateValidLocation } from './generate-valid-location';
 import { loggerDebug } from '@maur025/core-logger';
-import { testGraphMovement } from 'util/bot-script-test';
 import redisClient from '@config/redis/create-redis-client';
+import { findOptimalRoute } from './find-optimal-route';
+import { sendSimulatePathCoords } from './send-simulate-path-coords';
 
 interface Request {
 	key: string;
@@ -26,17 +27,25 @@ export const simulateMovementOnRoute = async ({
 	let attempt: number = 30;
 
 	while (!path.length && attempt > 0) {
-		const newDestination: Position = await generateValidLocation();
-		loggerDebug(`new destination: ${newDestination}`);
+		const newGoalPosition: Position = await generateValidLocation();
+		loggerDebug(`new destination: ${newGoalPosition}`);
 
-		path = await testGraphMovement(currentLocation, newDestination);
+		path = await findOptimalRoute({
+			startPosition: currentLocation,
+			goalPosition: newGoalPosition,
+		});
 
 		attempt--;
 	}
 
-	if (!attempt) {
+	if (!attempt && !path.length) {
 		loggerDebug('FINISH WITHOUT PATH: ROUTE IN CURRENT WAY');
+
+		return;
 	}
 
-	loggerDebug('PATH FOUNDED');
+	await sendSimulatePathCoords({
+		key,
+		path,
+	});
 };

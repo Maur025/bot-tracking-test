@@ -22,29 +22,28 @@ class GraphWayIntersectionService extends BaseService<IGraphWayIntersection> {
 	};
 
 	// review use
-	public readonly findNearbyNodes = async (
-		position: Position,
-		maxDistance: number,
-		minDistance: number = 0
-	): Promise<IGraphWayIntersection[]> => {
-		return this.serviceModel()
-			.find({
-				coord: {
-					$near: {
-						$geometry: {
-							type: 'Point',
-							coordinates: position,
-						},
-						$maxDistance: maxDistance,
-						$minDistance: minDistance,
-					},
-				},
-			})
-			.populate('connections')
-			.exec();
-	};
+	// public readonly findNearbyNodes = async (
+	// 	position: Position,
+	// 	maxDistance: number,
+	// 	minDistance: number = 0
+	// ): Promise<IGraphWayIntersection[]> => {
+	// 	return this.serviceModel()
+	// 		.find({
+	// 			coord: {
+	// 				$near: {
+	// 					$geometry: {
+	// 						type: 'Point',
+	// 						coordinates: position,
+	// 					},
+	// 					$maxDistance: maxDistance,
+	// 					$minDistance: minDistance,
+	// 				},
+	// 			},
+	// 		})
+	// 		.populate('connections')
+	// 		.exec();
+	// };
 
-	// review use
 	public readonly findNearby = async ({
 		position,
 		limit = 1,

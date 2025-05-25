@@ -1,5 +1,3 @@
-import { BaseData } from '@maur025/core-model-data';
-
 export interface DeviceBotCache {
 	id: string;
 	referenceCaptureId: string;
@@ -21,4 +19,5 @@ export interface DeviceBotCache {
 	einfo: string; // represent value as number
 	custom: string; // represent value as number
 	running: 'true' | 'false'; // string con 2 values
+	inMovement: 'true' | 'false';
 }

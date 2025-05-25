@@ -16,7 +16,7 @@ export const deviceInitConsumerHandler = async ({
 		return;
 	}
 
-	const [lon = 0, lat = 0] = device.lastPosition?.coordinates;
+	const [lon = 0, lat = 0] = device.lastPosition?.coordinates ?? [0, 0];
 
 	const deviceBotCache: DeviceBotCache = {
 		id: device._id,
@@ -39,10 +39,10 @@ export const deviceInitConsumerHandler = async ({
 		einfo: '0',
 		custom: '0',
 		running: 'true',
+		inMovement: 'false',
 	};
 
 	await redisClient.hSet(`device-bot:${device._id}`, { ...deviceBotCache });
 
-	// sendPositionTest(device.imei);
 	simulateDeviceMovement({ deviceId: device._id });
 };
