@@ -28,9 +28,9 @@ export const simulateDeviceMovement = async ({
 	while (JSON.parse(isRunning ?? 'false')) {
 		// SIMULATION STRUCTURE
 		// 1. INPUT
-		const ignition: string | null = await redisClient.hGet(
+		const [ignition, inMovement]: (string | null)[] = await redisClient.hmGet(
 			DEVICE_KEY,
-			'ignition'
+			['ignition', 'inMovement']
 		);
 
 		if (ignition === '0') {
@@ -47,7 +47,9 @@ export const simulateDeviceMovement = async ({
 		// 2. UPDATE
 		// 3. RENDER
 
-		await simulateMovementOnRoute({ key: DEVICE_KEY });
+		if (!JSON.parse(inMovement ?? 'true')) {
+			await simulateMovementOnRoute({ key: DEVICE_KEY });
+		}
 
 		// await redisClient.hSet(DEVICE_KEY, 'event', REPLY_CURRENT_PASSIVE);
 		// const payload = await getMeiTrackPayload({ deviceId });

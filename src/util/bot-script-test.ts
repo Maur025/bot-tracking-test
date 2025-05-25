@@ -99,56 +99,7 @@ export const sendPositionTest = async (imei: string) => {
 // 	path: [number, number][],
 // 	imei: string
 // ): Promise<void> => {
-// 	if (path.length <= 1) {
-// 		loggerWarn(`can't move on array of only coordinate`);
-// 		return;
-// 	}
-// 	const pathEndCoords: [number, number] = path[path.length - 1];
-// 	const pathLine: Feature<LineString> = turfLineString([...path]);
 
-// 	const pathLength: number = turfLength(pathLine, { units: 'meters' });
-// 	console.log(pathLength);
-
-// 	let remainingDistance: number = 999999999;
-
-// 	// max speed city = 5 to 15 m/s
-// 	// masx speed highway = 20 to 30 m/s
-
-// 	let speed: number = 14; // v = m/s
-// 	let emitInterval: number = 1; // seconds
-// 	let currentPosition: number = 0;
-
-// 	while (remainingDistance > 1) {
-// 		let stepMeter: number = speed * emitInterval; // v=m/s ==>  m = v * s
-// 		const speedKmh = speed * 3.6;
-
-// 		DEVICE_TEMPLATE.speed = speedKmh.toFixed(2);
-
-// 		currentPosition += stepMeter;
-
-// 		const deviceStep: Feature<Point> = turfAlong(pathLine, currentPosition, {
-// 			units: 'meters',
-// 		});
-
-// 		const [deviceStepLon = 0, deviceStepLat = 0] =
-// 			deviceStep?.geometry?.coordinates;
-
-// 		const payload: string = getPayload({
-// 			imei,
-// 			lat: deviceStepLat,
-// 			lon: deviceStepLon,
-// 			event: REPLY_CURRENT_PASSIVE,
-// 		});
-
-// 		emitForUdp(payload);
-// 		await setDelay(emitInterval * 1000);
-
-// 		remainingDistance = turfDistance(
-// 			deviceStep.geometry?.coordinates,
-// 			pathEndCoords,
-// 			{ units: 'meters' }
-// 		);
-// 	}
 // };
 
 export const testGraphMovement = async (
@@ -189,113 +140,102 @@ export const testGraphMovement = async (
 		avaibleNodes.set(node.nodeId, node.toObject());
 	}
 
-	const currentPoint = await aStar(
-		{ ...startNode },
-		{
-			...endNode,
-		}
-	);
+	// const currentPoint = await aStar(
+	// 	{ ...startNode },
+	// 	{
+	// 		...endNode,
+	// 	}
+	// );
 
-	return buildPath(currentPoint) ?? [];
+	return []; //buildPath(currentPoint) ??
 };
 
-const aStar = async (start: any, goal: any): Promise<any> => {
-	// f(n) = g(n) + h(n)
-	let openList = [start];
-	const closedList: Set<string> = new Set<string>();
+// const aStar = async (start: any, goal: any): Promise<any> => {
+// 	// f(n) = g(n) + h(n)
+// 	let openList = [start];
+// 	const closedList: Set<string> = new Set<string>();
 
-	start.g = 0;
-	start.h = heuristic(start, goal);
-	start.f = start.g + start.h;
-	start.parent = null;
-	start.fromWay = null;
+// 	start.g = 0;
+// 	start.h = heuristic(start, goal);
+// 	start.f = start.g + start.h;
+// 	start.parent = null;
+// 	start.fromWay = null;
 
-	// console.log(start);
-	// console.log(avaibleNodes);
+// 	// console.log(start);
+// 	// console.log(avaibleNodes);
 
-	while (openList.length > 0) {
-		// order points/nodes for f value
-		openList.sort((pointA, pointB) => pointA.f - pointB.f);
+// 	while (openList.length > 0) {
+// 		// order points/nodes for f value
+// 		openList.sort((pointA, pointB) => pointA.f - pointB.f);
 
-		// get first element and remove of open list
-		const currentPoint = openList.shift();
+// 		// get first element and remove of open list
+// 		const currentPoint = openList.shift();
 
-		// point not exist must be break process
-		if (!currentPoint) {
-			break;
-		}
+// 		// point not exist must be break process
+// 		if (!currentPoint) {
+// 			break;
+// 		}
 
-		// console.log('CURRENT POINT NODE ID', currentPoint.nodeId);
-		// console.log('GOAL NODE ID', goal.nodeId);
-		// console.log(' ');
+// 		// console.log('CURRENT POINT NODE ID', currentPoint.nodeId);
+// 		// console.log('GOAL NODE ID', goal.nodeId);
+// 		// console.log(' ');
 
-		// goal reached if node ids match
-		if (currentPoint.nodeId === goal.nodeId) {
-			loggerDebug('Goal reached GOOD');
-			console.log('Se llego a la meta');
+// 		// goal reached if node ids match
+// 		if (currentPoint.nodeId === goal.nodeId) {
+// 			loggerDebug('Goal reached GOOD');
+// 			console.log('Se llego a la meta');
 
-			return currentPoint;
-		}
+// 			return currentPoint;
+// 		}
 
-		// add node to closedList = already review
-		closedList.add(currentPoint.nodeId);
+// 		// add node to closedList = already review
+// 		closedList.add(currentPoint.nodeId);
 
-		// console.log('current nodeId', currentPoint.nodeId);
+// 		// console.log('current nodeId', currentPoint.nodeId);
 
-		// iterate of current connections
-		for (const way of currentPoint.connections) {
-			const coords = way.geometry?.coordinates;
-			const startNodeId = getNodeId(coords[0]);
-			const endNodeId = getNodeId(coords[coords.length - 1]);
+// 		// iterate of current connections
+// 		for (const way of currentPoint.connections) {
+// 			const coords = way.geometry?.coordinates;
+// 			const startNodeId = getNodeId(coords[0]);
+// 			const endNodeId = getNodeId(coords[coords.length - 1]);
 
-			for (const neighborId of [startNodeId, endNodeId]) {
-				if (neighborId === currentPoint.nodeId) {
-					continue;
-				}
+// 			for (const neighborId of [startNodeId, endNodeId]) {
+// 				if (neighborId === currentPoint.nodeId) {
+// 					continue;
+// 				}
 
-				if (closedList.has(neighborId)) {
-					continue;
-				}
+// 				if (closedList.has(neighborId)) {
+// 					continue;
+// 				}
 
-				const neighbor = avaibleNodes.get(neighborId);
+// 				const neighbor = avaibleNodes.get(neighborId);
 
-				if (!neighbor) {
-					continue;
-				}
+// 				if (!neighbor) {
+// 					continue;
+// 				}
 
-				const tentativeG = currentPoint.g + heuristic(currentPoint, neighbor);
-				// console.log(tentativeG);
+// 				const tentativeG = currentPoint.g + heuristic(currentPoint, neighbor);
+// 				// console.log(tentativeG);
 
-				if (neighbor.g === undefined || tentativeG < neighbor.g) {
-					neighbor.g = tentativeG;
-					neighbor.h = heuristic(neighbor, goal);
-					neighbor.f = neighbor.g + neighbor.h;
-					neighbor.parent = currentPoint;
-					neighbor.fromWay = way;
+// 				if (neighbor.g === undefined || tentativeG < neighbor.g) {
+// 					neighbor.g = tentativeG;
+// 					neighbor.h = heuristic(neighbor, goal);
+// 					neighbor.f = neighbor.g + neighbor.h;
+// 					neighbor.parent = currentPoint;
+// 					neighbor.fromWay = way;
 
-					if (!openList.find(point => point.nodeId === neighbor.nodeId)) {
-						openList.push(neighbor);
-						// console.log('entro a agregar en la lista');
-					}
-				}
-			}
-		}
-	}
+// 					if (!openList.find(point => point.nodeId === neighbor.nodeId)) {
+// 						openList.push(neighbor);
+// 						// console.log('entro a agregar en la lista');
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
 
-	console.log('NO SE ENCONTRO UN CAMINO');
-	return null;
-};
-
-const heuristic = (pointA: any, pointB: any): number => {
-	const {
-		coord: { coordinates: coordStart },
-	} = pointA;
-	const {
-		coord: { coordinates: coordGoal },
-	} = pointB;
-
-	return turfDistance(coordStart, coordGoal, { units: 'meters' });
-};
+// 	console.log('NO SE ENCONTRO UN CAMINO');
+// 	return null;
+// };
 
 const buildPath = (node: any): any[] => {
 	let currentNode = node;
