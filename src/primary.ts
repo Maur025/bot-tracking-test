@@ -7,7 +7,6 @@ import { initializeProducer } from 'kafka-main/kafka-producer';
 import { loggerDebug, loggerInfo } from '@maur025/core-logger';
 import { createServer, Server } from 'node:http';
 import { setupMaster } from '@socket.io/sticky';
-import { setupPrimary } from '@socket.io/cluster-adapter';
 import env from '@config/env';
 import { initializeBotDevice } from 'service/initialize-bot-device';
 import {
@@ -20,6 +19,7 @@ import redisClient, {
 } from '@config/redis/create-redis-client';
 import { registerWayToDatabase } from 'service/register-way-to-database';
 import { cleanDeviceBot } from 'service/clean-device-bot';
+import { socketBridgeConnect } from '@socket/client/socket-bridge-client';
 
 const numberCpus = cpus().length;
 
@@ -34,8 +34,6 @@ if (cluster.isPrimary && numberCpus > 2) {
 		loadBalancingMethod: 'least-connection',
 	});
 
-	setupPrimary();
-
 	cluster.setupPrimary({
 		serialization: 'advanced',
 	});
@@ -43,6 +41,8 @@ if (cluster.isPrimary && numberCpus > 2) {
 	await initRedisClient();
 
 	await connectToDabase();
+
+	socketBridgeConnect();
 
 	httpServer.listen(env.PORT, () => {
 		loggerInfo(

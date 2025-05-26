@@ -25,6 +25,6 @@ await connectToDabase();
 
 await initRedisClient();
 
-initSocketServer(httpServer);
+await kafkaSubscribeConsumer();
 
-kafkaSubscribeConsumer();
+await initSocketServer(httpServer);

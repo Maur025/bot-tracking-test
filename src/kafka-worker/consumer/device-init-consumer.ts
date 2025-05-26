@@ -43,6 +43,5 @@ export const deviceInitConsumerHandler = async ({
 	};
 
 	await redisClient.hSet(`device-bot:${device._id}`, { ...deviceBotCache });
-
-	simulateDeviceMovement({ deviceId: device._id });
+	await redisClient.sAdd(`bot-process:${process.pid}`, device._id);
 };

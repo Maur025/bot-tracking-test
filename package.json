@@ -28,7 +28,7 @@
 		"@maur025/core-common": "^1.0.1",
 		"@maur025/core-logger": "^1.0.0",
 		"@maur025/core-model-data": "^1.2.0",
-		"@socket.io/cluster-adapter": "^0.2.2",
+		"@socket.io/redis-adapter": "^8.3.0",
 		"@socket.io/sticky": "^1.0.4",
 		"@tmcw/togeojson": "^7.1.1",
 		"@turf/turf": "^7.2.0",

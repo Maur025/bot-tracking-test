@@ -1,11 +1,14 @@
-import { loggerInfo } from '@maur025/core-logger';
-import { createAdapter } from '@socket.io/cluster-adapter';
+import env from '@config/env';
+import { loggerDebug, loggerInfo } from '@maur025/core-logger';
 import { setupWorker } from '@socket.io/sticky';
 import { Server as HttpServer } from 'http';
+import { createClient } from 'redis';
+import { botManager } from 'service/bot-manager';
 import { SocketTopic } from 'socket-topics';
 import { Server } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
 
-const SOCKET_SERVER_NAME = 'Socket-server';
+const SOCKET_SERVER_NAME = `socket-server-${process.pid}`;
 const {
 	CONNECTION,
 	DISCONNECT,
@@ -13,16 +16,31 @@ const {
 	ROOM_LEAVE,
 	ROOM_JOIN_RESPONSE,
 	ROOM_LEAVE_RESPONSE,
+	DEVICES_PUBLISHED_IN_KAFKA,
+	PROPAGATE_ORDER_INITIALIZE_BOTS,
 } = SocketTopic;
 
 let io: Server;
 
-export const initSocketServer = (httpServer: HttpServer): Server => {
+export const initSocketServer = async (
+	httpServer: HttpServer
+): Promise<Server> => {
 	io = new Server(httpServer, {
 		cors: { origin: '*', methods: ['GET', 'POST'] },
 	});
 
-	io.adapter(createAdapter());
+	const pubClient = createClient({
+		url: `redis://${env.REDIS_HOST}:${env.REDIS_PORT}`,
+	});
+	const subClient = pubClient.duplicate();
+
+	await pubClient.connect();
+	await subClient.connect();
+
+	io.adapter(createAdapter(pubClient, subClient));
+
+	const adapter = io.of('/').adapter;
+	adapter.on('message', () => {});
 
 	setupWorker(io);
 
@@ -57,6 +75,17 @@ export const initSocketServer = (httpServer: HttpServer): Server => {
 				`leave to room "${roomName}" succesfull`
 			);
 		});
+
+		socket.on(DEVICES_PUBLISHED_IN_KAFKA, message => {
+			io.serverSideEmit(PROPAGATE_ORDER_INITIALIZE_BOTS, message);
+			loggerDebug(message);
+			botManager.initializeBots();
+		});
+	});
+
+	io.on(PROPAGATE_ORDER_INITIALIZE_BOTS, message => {
+		loggerDebug(message);
+		botManager.initializeBots();
 	});
 
 	return io;
