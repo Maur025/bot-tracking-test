@@ -47,5 +47,10 @@ export const findOptimalRoute = async ({
 		availableNodes,
 	});
 
+	availableNodes.clear();
+	intermediateNodes.length = 0;
+	(startNodeFounded as any) = null;
+	(goalNodeFounded as any) = null;
+
 	return buildPathByLastNode({ lastNode: resultingNode });
 };

@@ -1,5 +1,5 @@
+import { getMeiTrackPayloadLength } from '@utils/get-mei-track-payload-length';
 import { describe, expect, test } from 'vitest';
-import { getMeiTrackPayloadLength } from '../../../src/util/get-mei-track-payload-length';
 
 describe('get mei track payload length', () => {
 	test('should return the correct length of the mei track payload', () => {

@@ -5,7 +5,7 @@ import { DeviceBotCache } from '@models/data/device-bot-cache';
 
 class BotManager {
 	private bots: Map<string, DeviceBotCache> = new Map<string, DeviceBotCache>();
-	private readonly TICK_MS: number = 500;
+	private readonly TICK_MS: number = 1000;
 
 	public readonly initializeBots = async (): Promise<void> => {
 		const deviceIds: string[] = await redisClient.sUnion(
@@ -29,19 +29,41 @@ class BotManager {
 
 		loggerDebug(`[bot-manager] bots initialized... starting`);
 
+		setInterval(() => {
+			const { rss, heapUsed } = process.memoryUsage();
+			console.log(
+				`[tickLoop] bots: ${this.bots.size}, RAM: ${(
+					heapUsed /
+					1024 /
+					1024
+				).toFixed(2)} MB, RSS: ${(rss / 1024 / 1024).toFixed(2)} MB`
+			);
+		}, 10000);
+
 		this.tickLoop();
 	};
 
 	private readonly tickLoop = async (): Promise<void> => {
-		const now = Date.now();
+		// const now = Date.now();
 
-		const botUpdates = [];
+		// const botUpdates = [];
 
-		for (const bot of this.bots.values()) {
-			botUpdates.push(this.tick(bot));
+		// for (const bot of this.bots.values()) {
+		// 	botUpdates.push(this.tick(bot));
+		// }
+
+		// await Promise.all(botUpdates);
+
+		const botsArray = Array.from(this.bots?.values());
+		const BATCH_SIZE = 50;
+
+		for (let i = 0; i < botsArray.length; i += BATCH_SIZE) {
+			const batch = botsArray.slice(i, i + BATCH_SIZE);
+
+			await Promise.all(batch.map(bot => this.tick(bot)));
+
+			await new Promise(resolve => setTimeout(resolve, 20));
 		}
-
-		await Promise.all(botUpdates);
 
 		setTimeout(this.tickLoop, this.TICK_MS);
 	};

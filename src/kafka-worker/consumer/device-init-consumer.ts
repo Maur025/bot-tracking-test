@@ -39,8 +39,11 @@ export const deviceInitConsumerHandler = async ({
 		custom: '0',
 		running: 'true',
 		inMovement: 'false',
+		assignedRoute: 'false',
 	};
 
-	await redisClient.hSet(`device-bot:${device._id}`, { ...deviceBotCache });
+	const { routeTravel, ...objectToSave } = deviceBotCache;
+
+	await redisClient.hSet(`device-bot:${device._id}`, objectToSave);
 	await redisClient.sAdd(`bot-process:${process.pid}`, device._id);
 };
