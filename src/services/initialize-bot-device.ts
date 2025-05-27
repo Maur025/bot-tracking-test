@@ -1,12 +1,12 @@
-import { devicePublisher } from 'kafka-main/publisher/device-publisher';
 import { deviceService } from './database/device-service';
 import { generateBotDevice } from './generate-bot-device';
 import { IDevice } from '@models/schema/device-schema';
 import redisClient from '@config/redis/create-redis-client';
 import { simulateDelay } from './simulate-movement/simulate-delay';
 import { getSocketBridge } from '@socket/client/socket-bridge-client';
-import { SocketTopic } from 'socket-topics';
 import { loggerWarn } from '@maur025/core-logger';
+import { SocketTopic } from '@src/socket-topics';
+import { devicePublisher } from '@kafkaMain/publisher/device-publisher';
 
 const { DEVICES_PUBLISHED_IN_KAFKA } = SocketTopic;
 const DEVICE_QUANTITY = 10;

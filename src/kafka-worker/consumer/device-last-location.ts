@@ -6,8 +6,8 @@ import {
 } from '@maur025/core-model-data';
 import { v4 as uuidv4 } from 'uuid';
 import { getIo } from '@socket/server/init-socket-server';
-import { SocketRoom } from 'socket-room';
-import { SocketTopic } from 'socket-topics';
+import { SocketTopic } from '@src/socket-topics';
+import { SocketRoom } from '@src/socket-room';
 
 const { DEVICE_LOCATION_LAST } = SocketTopic;
 const { MONITOR_ALL_DEVICES } = SocketRoom;

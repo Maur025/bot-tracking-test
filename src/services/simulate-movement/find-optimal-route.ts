@@ -1,11 +1,11 @@
 import { IGraphWayIntersection } from '@models/schema/graph-way-intersection';
 import { distance as turfDistance } from '@turf/turf';
 import { Position } from 'geojson';
-import { graphWayIntersectionService } from 'service/database/graph-way-intersection-service';
 import { getAvailableNodesMap } from './get-available-nodes-map';
 import { aStarAlgorithm } from './a-star-algorithm';
 import { AvailableNode } from '@models/data/available-node';
 import { buildPathByLastNode } from './build-path-by-last-node';
+import { graphWayIntersectionService } from '../database/graph-way-intersection-service';
 
 interface Request {
 	startPosition: Position;

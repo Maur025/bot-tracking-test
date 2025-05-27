@@ -1,6 +1,6 @@
-import { KafkaTopics } from 'kafka-topics';
-import { publish } from '../kafka-producer';
+import { KafkaTopics } from '@src/kafka-topics';
 import { IDevice } from '@models/schema/device-schema';
+import { publish } from '../kafka-producer';
 
 const { DEVICE_INIT } = KafkaTopics;
 

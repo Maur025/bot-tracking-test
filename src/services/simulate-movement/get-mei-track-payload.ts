@@ -1,7 +1,7 @@
 import { DeviceBotCache } from '@models/data/device-bot-cache';
-import { getMeiTrackCheckSum } from 'util/get-mei-track-check-sum-hex';
-import { getMeiTrackDate } from 'util/get-mei-track-date';
-import { getMeiTrackPayloadLength } from 'util/get-mei-track-payload-length';
+import { getMeiTrackCheckSum } from '@utils/get-mei-track-check-sum-hex';
+import { getMeiTrackDate } from '@utils/get-mei-track-date';
+import { getMeiTrackPayloadLength } from '@utils/get-mei-track-payload-length';
 
 interface Request {
 	bot: DeviceBotCache;

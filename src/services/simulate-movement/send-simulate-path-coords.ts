@@ -6,11 +6,11 @@ import {
 	along as alongTurf,
 } from '@turf/turf';
 import { Feature, LineString, Point, Position } from 'geojson';
-import { emitDataForUdp } from 'util/emit-data-for-udp';
 import { getMeiTrackPayload } from './get-mei-track-payload';
 import { simulateDelay } from './simulate-delay';
 import redisClient from '@config/redis/create-redis-client';
 import { deviceEvents } from '@config/device-events';
+import { emitDataForUdp } from '@utils/emit-data-for-udp';
 
 interface Request {
 	path: Position[];
@@ -68,18 +68,18 @@ export const sendSimulatePathCoords = async ({
 			event: REPLY_CURRENT_PASSIVE,
 		});
 
-		const payload: string = await getMeiTrackPayload({
-			key,
-		});
+		// const payload: string = await getMeiTrackPayload({
+		// 	key,
+		// });
 
-		emitDataForUdp(payload);
-		await simulateDelay(emitInterval);
+		// emitDataForUdp(payload);
+		// await simulateDelay(emitInterval);
 
-		remainingDistance = distanceTurf(
-			deviceStep.geometry?.coordinates,
-			goalPositionPath,
-			{ units: 'meters' }
-		);
+		// remainingDistance = distanceTurf(
+		// 	deviceStep.geometry?.coordinates,
+		// 	goalPositionPath,
+		// 	{ units: 'meters' }
+		// );
 	}
 
 	// await redisClient.hSet(key, 'inMovement', 'false');

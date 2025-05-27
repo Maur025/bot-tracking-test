@@ -1,6 +1,6 @@
 import env from '@config/env';
 import { loggerInfo } from '@maur025/core-logger';
-import { SocketTopic } from 'socket-topics';
+import { SocketTopic } from '@src/socket-topics';
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_NAME = 'socket-bridge-client-primary';

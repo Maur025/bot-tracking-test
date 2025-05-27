@@ -2,10 +2,10 @@ import { connectToDabase } from '@config/database/database-config';
 import { initSocketServer } from '@socket/server/init-socket-server';
 import express, { Application } from 'express';
 import { createServer, Server } from 'http';
-import { kafkaSubscribeConsumer } from 'kafka-worker/kafka-subscribe-consumer';
 import cors from 'cors';
 import router from '@routes/index.routes';
 import { initRedisClient } from '@config/redis/create-redis-client';
+import { kafkaSubscribeConsumer } from '@kafkaWorker/kafka-subscribe-consumer';
 
 const app: Application = express();
 app.use(

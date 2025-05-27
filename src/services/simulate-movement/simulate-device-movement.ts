@@ -2,10 +2,10 @@ import { deviceEvents } from '@config/device-events';
 import redisClient from '@config/redis/create-redis-client';
 import { getMeiTrackPayload } from './get-mei-track-payload';
 import { simulateDelay } from './simulate-delay';
-import { emitDataForUdp } from 'util/emit-data-for-udp';
 import { loggerDebug } from '@maur025/core-logger';
 import { initDevicePosition } from './init-device-position';
 import { simulateMovementOnRoute } from './simulate-movement-on-route';
+import { emitDataForUdp } from '@utils/emit-data-for-udp';
 
 interface Request {
 	deviceId: string;
@@ -40,9 +40,9 @@ export const simulateDeviceMovement = async ({
 				event: IGNITION_ON,
 			});
 
-			const payloadInit = await getMeiTrackPayload({ key: DEVICE_KEY });
-			emitDataForUdp(payloadInit);
-			await simulateDelay(1);
+			// const payloadInit = await getMeiTrackPayload({ key: DEVICE_KEY });
+			// emitDataForUdp(payloadInit);
+			// await simulateDelay(1);
 		}
 		// 2. UPDATE
 		// 3. RENDER

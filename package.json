@@ -1,12 +1,12 @@
 {
 	"name": "bot-test",
-	"version": "1.0.0",
+	"version": "0.0.0",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
 		"dev": "tsx watch src/primary.ts",
 		"start": "node dist/primary.js",
-		"build": "tsc && tsc-alias",
+		"build": "tsc -p tsconfig-build.json && tsc-alias",
 		"test": "vitest",
 		"test:watch": "vitest --watch"
 	},
@@ -24,6 +24,7 @@
 		"tsconfig-paths": "^4.2.0",
 		"tsx": "^4.19.4",
 		"typescript": "^5.8.3",
+		"vite-tsconfig-paths": "^5.1.4",
 		"vitest": "^3.1.4"
 	},
 	"dependencies": {
