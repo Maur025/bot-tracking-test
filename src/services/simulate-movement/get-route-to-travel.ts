@@ -1,34 +1,23 @@
 import { Position } from 'geojson';
 import { generateValidLocation } from './generate-valid-location';
 import { loggerDebug } from '@maur025/core-logger';
-import redisClient from '@config/redis/create-redis-client';
 import { findOptimalRoute } from './find-optimal-route';
-import { sendSimulatePathCoords } from './send-simulate-path-coords';
+import { DeviceBotCache } from '@models/data/device-bot-cache';
 
 interface Request {
-	key: string;
+	bot: DeviceBotCache;
 }
 
-export const simulateMovementOnRoute = async ({
-	key,
-}: Request): Promise<void> => {
-	const [lon, lat]: (string | null)[] = await redisClient.hmGet(key, [
-		'lon',
-		'lat',
-	]);
-
-	if (!lat || !lon) {
-		return;
-	}
-
-	const currentLocation: Position = [Number(lon), Number(lat)];
+export const getRouteToTravel = async ({
+	bot,
+}: Request): Promise<Position[]> => {
+	const currentLocation: Position = [Number(bot.lon), Number(bot.lat)];
 
 	let path: Position[] = [];
-	let attempt: number = 30;
+	let attempt: number = 2;
 
 	while (!path.length && attempt > 0) {
 		const newGoalPosition: Position = await generateValidLocation();
-		loggerDebug(`new destination: ${newGoalPosition}`);
 
 		path = await findOptimalRoute({
 			startPosition: currentLocation,
@@ -41,11 +30,8 @@ export const simulateMovementOnRoute = async ({
 	if (!attempt && !path.length) {
 		loggerDebug('FINISH WITHOUT PATH: ROUTE IN CURRENT WAY');
 
-		return;
+		return [];
 	}
 
-	await sendSimulatePathCoords({
-		key,
-		path,
-	});
+	return path;
 };

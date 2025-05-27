@@ -4,7 +4,6 @@ import { getMeiTrackPayload } from './get-mei-track-payload';
 import { simulateDelay } from './simulate-delay';
 import { loggerDebug } from '@maur025/core-logger';
 import { initDevicePosition } from './init-device-position';
-import { simulateMovementOnRoute } from './simulate-movement-on-route';
 import { emitDataForUdp } from '@utils/emit-data-for-udp';
 
 interface Request {
@@ -47,9 +46,9 @@ export const simulateDeviceMovement = async ({
 		// 2. UPDATE
 		// 3. RENDER
 
-		if (!JSON.parse(inMovement ?? 'true')) {
-			await simulateMovementOnRoute({ key: DEVICE_KEY });
-		}
+		// if (!JSON.parse(inMovement ?? 'true')) {
+		// 	await simulateMovementOnRoute({ key: DEVICE_KEY });
+		// }
 
 		// await redisClient.hSet(DEVICE_KEY, 'event', REPLY_CURRENT_PASSIVE);
 		// const payload = await getMeiTrackPayload({ deviceId });

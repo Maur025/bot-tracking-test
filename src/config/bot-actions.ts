@@ -1,5 +1,6 @@
 import { loggerDebug } from '@maur025/core-logger';
 import { DeviceBotCache } from '@models/data/device-bot-cache';
+import { botMove } from '@services/bot-action/bot-move';
 
 export interface BotAction {
 	name: string;
@@ -11,7 +12,7 @@ export const botActions: BotAction[] = [
 	{
 		name: 'move',
 		weight: 40,
-		execute: async bot => loggerDebug('bot moving'),
+		execute: botMove,
 	},
 	{
 		name: 'increase speed',

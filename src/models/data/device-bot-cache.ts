@@ -1,3 +1,5 @@
+import { Position } from 'geojson';
+
 export interface DeviceBotCache {
 	id: string;
 	referenceCaptureId: string;
@@ -20,4 +22,7 @@ export interface DeviceBotCache {
 	custom: string; // represent value as number
 	running: 'true' | 'false'; // string con 2 values
 	inMovement: 'true' | 'false';
+	assignedRoute: 'true' | 'false';
+	routeTravel?: Position[];
+	distanceCurrentlyTraveled?: number;
 }
