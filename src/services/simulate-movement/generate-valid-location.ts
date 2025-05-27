@@ -9,8 +9,8 @@ import {
 	randomPosition,
 } from '@turf/turf';
 import { BBox, Feature, LineString, Position } from 'geojson';
-import { wayService } from 'service/database/way-service';
 import { IWay } from '@models/schema/way-schema';
+import { wayService } from '../database/way-service';
 
 const { topRight, topLeft, bottomLeft, bottomRight } = transitArea;
 

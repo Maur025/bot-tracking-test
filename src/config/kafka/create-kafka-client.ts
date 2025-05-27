@@ -1,6 +1,6 @@
 import env from '@config/env';
+import { kafkaLogEntryHandler } from '@utils/kafka-log-entry-handler';
 import { Kafka, LogEntry, logLevel } from 'kafkajs';
-import { kafkaLogEntryHandler } from 'util/kafka-log-entry-handler';
 
 export const createKafkaClient = (clientId: string): Kafka => {
 	return new Kafka({

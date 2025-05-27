@@ -1,9 +1,8 @@
 import { EachMessagePayload } from 'kafkajs';
 import { IDevice } from '@models/schema/device-schema';
-import { getPayloadKafka } from 'util/json-util';
 import redisClient from '@config/redis/create-redis-client';
 import { DeviceBotCache } from '@models/data/device-bot-cache';
-import { simulateDeviceMovement } from 'service/simulate-movement/simulate-device-movement';
+import { getPayloadKafka } from '@src/utils/json-util';
 
 export const deviceInitConsumerHandler = async ({
 	topic,

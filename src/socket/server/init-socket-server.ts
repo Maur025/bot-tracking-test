@@ -3,10 +3,10 @@ import { loggerDebug, loggerInfo } from '@maur025/core-logger';
 import { setupWorker } from '@socket.io/sticky';
 import { Server as HttpServer } from 'http';
 import { createClient } from 'redis';
-import { botManager } from 'service/bot-manager';
-import { SocketTopic } from 'socket-topics';
 import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
+import { SocketTopic } from '@src/socket-topics';
+import { botManager } from '@services/bot-manager';
 
 const SOCKET_SERVER_NAME = `socket-server-${process.pid}`;
 const {

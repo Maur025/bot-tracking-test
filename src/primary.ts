@@ -2,24 +2,24 @@ import 'dotenv/config';
 import { socketTrackConnect } from '@socket/client/socket-track-client';
 import cluster, { Worker } from 'node:cluster';
 import { cpus } from 'node:os';
-import { getWorkersToCreate } from 'util/get-workers-to-create';
-import { initializeProducer } from 'kafka-main/kafka-producer';
 import { loggerDebug, loggerInfo } from '@maur025/core-logger';
 import { createServer, Server } from 'node:http';
 import { setupMaster } from '@socket.io/sticky';
 import env from '@config/env';
-import { initializeBotDevice } from 'service/initialize-bot-device';
 import {
 	connectToDabase,
 	disconnectDatabase,
 } from '@config/database/database-config';
-import { initWayGraph } from 'service/init-way-graph';
 import redisClient, {
 	initRedisClient,
 } from '@config/redis/create-redis-client';
-import { registerWayToDatabase } from 'service/register-way-to-database';
-import { cleanDeviceBot } from 'service/clean-device-bot';
 import { socketBridgeConnect } from '@socket/client/socket-bridge-client';
+import { initializeProducer } from '@kafkaMain/kafka-producer';
+import { getWorkersToCreate } from '@utils/get-workers-to-create';
+import { registerWayToDatabase } from '@services/register-way-to-database';
+import { initWayGraph } from '@services/init-way-graph';
+import { initializeBotDevice } from '@services/initialize-bot-device';
+import { cleanDeviceBot } from '@services/clean-device-bot';
 
 const numberCpus = cpus().length;
 

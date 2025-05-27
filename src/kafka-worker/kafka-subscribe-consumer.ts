@@ -1,9 +1,9 @@
-import { KafkaTopics } from 'kafka-topics';
 import { createConsumer } from './kafka-consumer-worker';
 import { deviceInitConsumerHandler } from './consumer/device-init-consumer';
 import { deviceLastLocationConsumerHandler } from './consumer/device-last-location';
 import { Consumer, EachMessagePayload } from 'kafkajs';
 import { loggerWarn } from '@maur025/core-logger';
+import { KafkaTopics } from '@src/kafka-topics';
 
 const { DEVICE_INIT, DEVICE_LAST_LOCATION } = KafkaTopics;
 

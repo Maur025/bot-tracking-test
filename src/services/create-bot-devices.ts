@@ -1,7 +1,7 @@
-import { randomNumberBetweenDigits } from 'util/random-number-between-digits';
 import { deviceService } from './database/device-service';
 import { IDevice } from '@models/schema/device-schema';
 import { loggerError } from '@maur025/core-logger';
+import { randomNumberBetweenDigits } from '@utils/random-number-between-digits';
 
 const IMEI_PREFIX = '35046350';
 

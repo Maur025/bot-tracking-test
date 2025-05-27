@@ -1,8 +1,8 @@
 import env from '@config/env';
+import { deviceLastLocationPublisher } from '@kafkaMain/publisher/device-last-location';
 import { loggerInfo } from '@maur025/core-logger';
 import { DeviceCurrentLocation } from '@models/data/device-current-location';
-import { deviceLastLocationPublisher } from 'kafka-main/publisher/device-last-location';
-import { SocketTopic } from 'socket-topics';
+import { SocketTopic } from '@src/socket-topics';
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_NAME = 'socket-client-track-primary';
