@@ -7,10 +7,12 @@ import {
 	Feature,
 	FeatureCollection,
 	LineString,
+	MultiPolygon,
 	Point,
+	Polygon,
 	Position,
 } from 'geojson';
-import { lineIntersect, lineString } from '@turf/turf';
+import { booleanWithin, buffer, lineIntersect, lineString } from '@turf/turf';
 import { IGraphWayIntersection } from '@models/schema/graph-way-intersection';
 
 export const initWayGraph = async () => {
@@ -46,7 +48,7 @@ export const initWayGraph = async () => {
 			}
 
 			const wayLineCoords: Position[] = way.geometry?.coordinates;
-			const mainWayLine: Feature<LineString> = lineString(
+			let mainWayLine: Feature<LineString> | null = lineString(
 				way.geometry?.coordinates
 			);
 
@@ -55,33 +57,64 @@ export const initWayGraph = async () => {
 			);
 
 			for (const intersectWay of possibleIntersectWays) {
-				const intersectWayLine: Feature<LineString> = lineString(
+				let intersectWayLine: Feature<LineString> | null = lineString(
 					intersectWay.geometry?.coordinates
 				);
 
-				const intersectCollection: FeatureCollection<Point> = lineIntersect(
-					mainWayLine,
-					intersectWayLine
-				);
+				let intersectCollection: FeatureCollection<Point> | null =
+					lineIntersect(mainWayLine, intersectWayLine);
 
 				for (const intersectionPoint of intersectCollection.features) {
-					const intersectionPointCoords: Position =
+					let intersectionPointCoords: Position | null =
 						intersectionPoint.geometry?.coordinates;
 
-					const nodeId: string = getNodeId(intersectionPointCoords);
+					let nodeId: string | null = getNodeId(intersectionPointCoords);
 
 					let nodeData: IGraphWayIntersection | null =
 						await graphWayIntersectionService.findByNodeId(nodeId);
 
-					const nearbyNodes: IGraphWayIntersection[] =
+					let nearbyNodes: IGraphWayIntersection[] =
 						await graphWayIntersectionService.findNearby({
 							position: intersectionPointCoords,
 							limit: 10,
 						});
 
-					const nearbyNodeIds: string[] = nearbyNodes
-						.map(node => node.nodeId)
-						.filter(id => id !== nodeId);
+					let nearbyNodeIds: string[] = [];
+
+					for (const nearNode of nearbyNodes) {
+						if (nearNode.nodeId === nodeId) continue;
+
+						let lineBetweenNodes: Feature<LineString> | null = lineString([
+							intersectionPointCoords,
+							nearNode.coord?.coordinates,
+						]);
+
+						for (const wayToVerify of possibleIntersectWays) {
+							if (!wayToVerify?.geometry?.coordinates) continue;
+
+							let wayToVerifyLine: Feature<LineString> | null = lineString(
+								wayToVerify.geometry?.coordinates
+							);
+
+							let wayBuffer = buffer(wayToVerifyLine, 10, { units: 'meters' });
+
+							if (!wayBuffer) continue;
+
+							let isInside = booleanWithin(lineBetweenNodes, wayBuffer);
+
+							if (isInside) {
+								nearbyNodeIds.push(nearNode.nodeId);
+								break;
+							}
+
+							// CLEAN BEFORE NEXT CICLE
+							wayToVerifyLine = null;
+							wayBuffer = undefined;
+						}
+
+						// CLEAN BEFORE NEXT CICLE
+						lineBetweenNodes = null;
+					}
 
 					if (!nodeData) {
 						await graphWayIntersectionService.save({
@@ -100,16 +133,35 @@ export const initWayGraph = async () => {
 							connections: nearbyNodeIds,
 						});
 					}
+
+					// CLEAN BEFORE NEXT CICLE
+					intersectionPointCoords = null;
+					nodeId = null;
+					nodeData = null;
+					nearbyNodes.length = 0;
+					nearbyNodeIds.length = 0;
 				}
+
+				// CLEAN BEFORE NEXT CICLE
+				intersectWayLine = null;
+				intersectCollection = null;
 			}
 
 			loggerDebug(`Register N° ${manualCount} of ${wayQuantity}`);
+
+			// CLEAN BEFORE NEXT CICLE
+			wayLineCoords.length = 0;
+			mainWayLine = null;
+			possibleIntersectWays.length = 0;
 		}
 
 		loggerDebug(`PAGE NUMBER: ${page}...`);
 
 		hasMore = result.hasNextPage;
 		page++;
+
+		// CLEAN BEFORE NEXT CICLE
+		result.docs.length = 0;
 	}
 };
 

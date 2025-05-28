@@ -9,7 +9,7 @@ import { SocketTopic } from '@src/socket-topics';
 import { devicePublisher } from '@kafkaMain/publisher/device-publisher';
 
 const { DEVICES_PUBLISHED_IN_KAFKA } = SocketTopic;
-const DEVICE_QUANTITY = 15;
+const DEVICE_QUANTITY = 50;
 
 export const initializeBotDevice = async (): Promise<void> => {
 	const keys = await redisClient.keys('bot-process:*');

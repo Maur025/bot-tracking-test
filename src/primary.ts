@@ -63,12 +63,18 @@ if (cluster.isPrimary && numberCpus > 2) {
 		loggerDebug(`Worker [${worker.process.pid}] running.`);
 	});
 
+	cluster.on('exit', () => {});
+
 	await registerWayToDatabase();
 
 	await initWayGraph();
 	await initializeBotDevice();
 
 	process.on('SIGINT', async () => {
+		for (const id in cluster.workers) {
+			cluster.workers[id]?.process.kill('SIGINT');
+		}
+
 		await cleanDeviceBot();
 		await disconnectDatabase();
 
@@ -81,6 +87,10 @@ if (cluster.isPrimary && numberCpus > 2) {
 	});
 
 	process.on('SIGTERM', async () => {
+		for (const id in cluster.workers) {
+			cluster.workers[id]?.process.kill('SIGINT');
+		}
+
 		await cleanDeviceBot();
 		await disconnectDatabase();
 
