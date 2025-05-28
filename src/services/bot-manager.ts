@@ -44,16 +44,6 @@ class BotManager {
 	};
 
 	private readonly tickLoop = async (): Promise<void> => {
-		// const now = Date.now();
-
-		// const botUpdates = [];
-
-		// for (const bot of this.bots.values()) {
-		// 	botUpdates.push(this.tick(bot));
-		// }
-
-		// await Promise.all(botUpdates);
-
 		const botsArray = Array.from(this.bots?.values());
 		const BATCH_SIZE = 50;
 
@@ -71,7 +61,7 @@ class BotManager {
 	private readonly tick = async (bot: DeviceBotCache): Promise<void> => {
 		const actionToExecute: BotAction = this.chooseWeightAction();
 
-		actionToExecute.execute(bot);
+		// actionToExecute.execute(bot);
 	};
 
 	private readonly chooseWeightAction = (): BotAction => {

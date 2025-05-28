@@ -20,10 +20,10 @@ export const findOptimalRoute = async ({
 		units: 'meters',
 	});
 
-	const startNodeFounded: IGraphWayIntersection[] =
+	let startNodeFounded: IGraphWayIntersection[] =
 		await graphWayIntersectionService.findNearby({ position: startPosition });
 
-	const goalNodeFounded: IGraphWayIntersection[] =
+	let goalNodeFounded: IGraphWayIntersection[] =
 		await graphWayIntersectionService.findNearby({ position: goalPosition });
 
 	const intermediateNodes: IGraphWayIntersection[] =
@@ -32,8 +32,8 @@ export const findOptimalRoute = async ({
 			maxDistance: totalDistance * 1.25,
 		});
 
-	const startNode: AvailableNode = startNodeFounded[0].toObject();
-	const goalNode: AvailableNode = goalNodeFounded[0].toObject();
+	let startNode: AvailableNode = startNodeFounded[0].toObject();
+	let goalNode: AvailableNode = goalNodeFounded[0].toObject();
 
 	const availableNodes: Map<string, AvailableNode> = getAvailableNodesMap({
 		intermediateNodes,

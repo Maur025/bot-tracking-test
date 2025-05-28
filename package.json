@@ -4,7 +4,8 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"dev": "NODE_OPTIONS='--max-old-space-size=6096' tsx watch src/primary.ts",
+		"dev": "NODE_OPTIONS='--max-old-space-size=4096' tsx --watch src/primary.ts",
+		"dev:mem": "NODE_OPTIONS='--max-old-space-size=4096' tsx --inspect-brk --watch src/primary.ts",
 		"start": "node dist/primary.js",
 		"build": "tsc -p tsconfig-build.json && tsc-alias",
 		"test": "vitest",

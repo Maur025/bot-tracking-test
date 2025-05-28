@@ -11,8 +11,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: root987654321
       MONGO_INITDB_DATABASE: DeviceBotDb
-    command: mongod --auth
-    restart: always
+    command: ["mongod", "--auth", "--wiredTigerCacheSizeGB","0.5"]
+    restart: unless-stopped
     networks:
       - compose-net
 
