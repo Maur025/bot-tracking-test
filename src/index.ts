@@ -34,24 +34,24 @@ await kafkaSubscribeConsumer();
 
 await initSocketServer(httpServer);
 
-process.on('SIGINT', async () => {
-	await disconnectDatabase();
+// process.on('SIGINT', async () => {
+// 	await disconnectDatabase();
 
-	if (redisClient.isOpen) {
-		await redisClient.quit();
-	}
+// 	if (redisClient.isOpen) {
+// 		await redisClient.quit();
+// 	}
 
-	httpServer.close();
-	process.exit(0);
-});
+// 	httpServer.close();
+// 	process.exit(0);
+// });
 
-process.on('SIGTERM', async () => {
-	await disconnectDatabase();
+// process.on('SIGTERM', async () => {
+// 	await disconnectDatabase();
 
-	if (redisClient.isOpen) {
-		await redisClient.quit();
-	}
+// 	if (redisClient.isOpen) {
+// 		await redisClient.quit();
+// 	}
 
-	httpServer.close();
-	process.exit(0);
-});
+// 	httpServer.close();
+// 	process.exit(0);
+// });

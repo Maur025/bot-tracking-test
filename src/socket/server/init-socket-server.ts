@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { SocketTopic } from '@src/socket-topics';
 import { botManager } from '@services/bot-manager';
+import { intersectionNodeCache } from '@src/cache/intersection-node-cache';
 
 const SOCKET_SERVER_NAME = `socket-server-${process.pid}`;
 const {
@@ -76,14 +77,17 @@ export const initSocketServer = async (
 			);
 		});
 
-		socket.on(DEVICES_PUBLISHED_IN_KAFKA, message => {
+		socket.on(DEVICES_PUBLISHED_IN_KAFKA, async (message: string) => {
+			await intersectionNodeCache.initialize();
 			io.serverSideEmit(PROPAGATE_ORDER_INITIALIZE_BOTS, message);
 			loggerDebug(message);
+
 			botManager.initializeBots();
 		});
 	});
 
-	io.on(PROPAGATE_ORDER_INITIALIZE_BOTS, message => {
+	io.on(PROPAGATE_ORDER_INITIALIZE_BOTS, async (message: string) => {
+		await intersectionNodeCache.initialize();
 		loggerDebug(message);
 		botManager.initializeBots();
 	});
