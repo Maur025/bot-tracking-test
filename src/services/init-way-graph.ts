@@ -3,25 +3,16 @@ import { PaginateResult } from 'mongoose';
 import { IWay } from '@models/schema/way-schema';
 import { graphWayIntersectionService } from './database/graph-way-intersection-service';
 import { loggerDebug, loggerInfo } from '@maur025/core-logger';
-import {
-	Feature,
-	FeatureCollection,
-	LineString,
-	Point,
-	Position,
-} from 'geojson';
-import {
-	along,
-	distance,
-	length,
-	lineIntersect,
-	lineString,
-	pointToLineDistance,
-} from '@turf/turf';
+import { Position } from 'geojson';
 import { IGraphWayIntersection } from '@models/schema/graph-way-intersection';
-import RBush from 'rbush';
-import KDBush from 'kdbush';
-import geokdbush from 'geokdbush';
+
+interface ConnectionWayCoords {
+	wayCoords: Position[];
+	location: 'start' | 'center' | 'end';
+	nodeId: string;
+	coords: Position;
+	wayIndex: number;
+}
 
 export const initWayGraph = async () => {
 	const graphWayIntersectionCount: number =
@@ -32,15 +23,12 @@ export const initWayGraph = async () => {
 		return;
 	}
 
-	const wayQuantity: number = await wayService.count();
-
 	const limit: number = 1000;
 	let page: number = 1;
 	let hasMore: boolean = true;
-	let manualCount: number = 0;
 
 	const graphMap: Map<string, Partial<IGraphWayIntersection>> = new Map();
-	const indexedMapData: KDBush = new KDBush(127251);
+	const connectionWayCoordMap: Map<string, ConnectionWayCoords[]> = new Map();
 
 	console.time('carga de nodos al graphMap con un tiempo de: ');
 	while (hasMore) {
@@ -48,32 +36,76 @@ export const initWayGraph = async () => {
 			{},
 			{ page, limit }
 		);
-		for (const way of result.docs) {
-			manualCount++;
 
-			if (
-				way.geometry.type !== 'LineString' ||
-				way.geometry.coordinates.length < 2
-			) {
+		for (const way of result.docs) {
+			const wayCoords = way.geometry?.coordinates;
+
+			if (way.geometry.type !== 'LineString' || wayCoords.length < 2) {
 				continue;
 			}
 
-			for (const coord of way.geometry?.coordinates) {
-				const nodeId: string = getNodeId(coord);
+			for (let index = 0; index < wayCoords.length; index++) {
+				const nodeId: string = getNodeId(wayCoords[index]);
 
 				if (graphMap.has(nodeId)) {
+					let type: 'start' | 'center' | 'end' = 'center';
+					if (index === 0) {
+						type = 'start';
+					}
+
+					if (index + 1 === wayCoords.length) {
+						type = 'end';
+					}
+
+					let connectionData: ConnectionWayCoords[] | undefined =
+						connectionWayCoordMap.get(nodeId);
+
+					let connectionDataToAdd: ConnectionWayCoords | undefined = {
+						wayCoords: wayCoords,
+						location: type,
+						coords: wayCoords[index],
+						nodeId,
+						wayIndex: index,
+					};
+
+					if (!connectionData) {
+						connectionWayCoordMap.set(nodeId, [connectionDataToAdd]);
+					} else {
+						connectionWayCoordMap.set(nodeId, [
+							...connectionData,
+							connectionDataToAdd,
+						]);
+					}
+
+					connectionData = undefined;
+					connectionDataToAdd = undefined;
+
 					continue;
+				}
+
+				let nodeConnections: string[] = [];
+
+				if (index === 0) {
+					nodeConnections.push(getNodeId(wayCoords[index + 1]));
+				}
+
+				if (index + 1 === wayCoords.length) {
+					nodeConnections.push(getNodeId(wayCoords[wayCoords.length - 1]));
+				}
+
+				if (index > 0 && index + 1 < wayCoords.length) {
+					nodeConnections.push(getNodeId(wayCoords[index + 1]));
+					nodeConnections.push(getNodeId(wayCoords[index - 1]));
 				}
 
 				graphMap.set(nodeId, {
 					nodeId,
-					coord: { type: 'Point', coordinates: coord },
+					coord: { type: 'Point', coordinates: wayCoords[index] },
+					connections: [...nodeConnections],
 				});
 
-				indexedMapData.add(coord[0], coord[1]); // type Position of geojson
+				nodeConnections.length = 0;
 			}
-
-			loggerDebug(`Register N° ${manualCount} of ${wayQuantity}`);
 		}
 
 		loggerDebug(`PAGE NUMBER: ${page}...`);
@@ -85,30 +117,94 @@ export const initWayGraph = async () => {
 		result.docs.length = 0;
 	}
 	console.timeEnd('carga de nodos al graphMap con un tiempo de: ');
-	indexedMapData.finish();
 
+	reviewConnections(graphMap, connectionWayCoordMap);
+	await saveToDataBase(graphMap);
 	loggerDebug(`graphMap size: ${graphMap.size}`);
-
-	connectGraphMap(graphMap, indexedMapData);
+	loggerDebug(`cadidate to connect size: ${connectionWayCoordMap.size}`);
 
 	graphMap.clear();
+	connectionWayCoordMap.clear();
 };
 
-const connectGraphMap = (
+const reviewConnections = (
 	graphMap: Map<string, Partial<IGraphWayIntersection>>,
-	indexedGraphMap: KDBush
-): void => {
-	const graphMapAsList: Partial<IGraphWayIntersection>[] = Array.from(
-		graphMap.values()
-	);
+	connectionWayCoords: Map<string, ConnectionWayCoords[]>
+) => {
+	console.time('reading candidate connection list');
+	for (const connectionCandidate of connectionWayCoords) {
+		const [keyOrId, candidateDataList] = connectionCandidate;
 
-	console.time('leendo lista de nodos');
-	for (const nodo of graphMap.values()) {
-		const nodoCoords = nodo.coord?.coordinates;
+		const nodeToConnect = graphMap.get(keyOrId);
 
-		if (!nodoCoords) continue;
+		if (!nodeToConnect) {
+			continue;
+		}
+
+		for (const candidateData of candidateDataList) {
+			let nodeToConnectId: string = '';
+			let extraNodeToConnectId: string = '';
+
+			if (candidateData.location === 'end') {
+				nodeToConnectId = getNodeId(
+					candidateData.wayCoords[candidateData.wayIndex - 1]
+				);
+			}
+
+			if (candidateData.location === 'start') {
+				nodeToConnectId = getNodeId(
+					candidateData.wayCoords[candidateData.wayIndex + 1]
+				);
+			}
+
+			if (candidateData.location === 'center') {
+				nodeToConnectId = getNodeId(
+					candidateData.wayCoords[candidateData.wayIndex + 1]
+				);
+
+				extraNodeToConnectId = getNodeId(
+					candidateData.wayCoords[candidateData.wayIndex - 1]
+				);
+			}
+
+			if (nodeToConnectId) {
+				if (graphMap.has(nodeToConnectId)) {
+					nodeToConnect.connections?.push(nodeToConnectId);
+				}
+			}
+
+			if (extraNodeToConnectId) {
+				if (graphMap.has(extraNodeToConnectId)) {
+					nodeToConnect.connections?.push(extraNodeToConnectId);
+				}
+			}
+		}
 	}
-	console.timeEnd('leendo lista de nodos');
+	console.timeEnd('reading candidate connection list');
+};
+
+const saveToDataBase = async (
+	graphMap: Map<string, Partial<IGraphWayIntersection>>
+): Promise<void> => {
+	const batchSize: number = 1000;
+	let batch: Partial<IGraphWayIntersection>[] = [];
+
+	console.time('saving data to database ');
+	for (const graphData of graphMap.values()) {
+		const connectionsSet: Set<string> = new Set(graphData.connections);
+
+		batch.push({ ...graphData, connections: Array.from(connectionsSet) });
+
+		if (batch.length === batchSize) {
+			await graphWayIntersectionService.saveAll(batch);
+			batch = [];
+		}
+	}
+
+	if (batch.length) {
+		await graphWayIntersectionService.saveAll(batch);
+	}
+	console.timeEnd('saving data to database ');
 };
 
 export const getNodeId = (point: Position): string => {
@@ -117,170 +213,3 @@ export const getNodeId = (point: Position): string => {
 
 	return `${lon}/${lat}`;
 };
-
-// === fase 2 ====
-/*
-
-const indexNearbies = indexedGraphMap.within(
-			nodoCoords[0],
-			nodoCoords[1],
-			200 / 111320 // 200 meters ... prefix to nodes
-		);
-
-let mainWayLine: Feature<LineString> | null = lineString(
-				way.geometry?.coordinates
-			);
-			// console.time('for-loop intersect as way list');
-			for (const intersectWay of possibleIntersectWays) {
-				let intersectWayLine: Feature<LineString> | null = lineString(
-					intersectWay.geometry?.coordinates
-				);
-
-				let intersectCollection: FeatureCollection<Point> | null =
-					lineIntersect(mainWayLine, intersectWayLine);
-
-				// console.time('for-loop real intersect list');
-				for (const intersectionPoint of intersectCollection.features) {
-					let intersectionPointCoords: Position | null =
-						intersectionPoint.geometry?.coordinates;
-
-					let nodeId: string | null = getNodeId(intersectionPointCoords);
-
-					const nearbyNodes = spatialTree.search({
-						minX: intersectionPointCoords[0] - searchNodeBuffer,
-						minY: intersectionPointCoords[1] - searchNodeBuffer,
-						maxX: intersectionPointCoords[0] + searchNodeBuffer,
-						maxY: intersectionPointCoords[1] + searchNodeBuffer,
-					}) as {
-						nodeId: string;
-						coord: { type: string; coordinates: Position };
-					}[];
-
-					const filterNearbyNodes = nearbyNodes
-						.map(node => {
-							if (!intersectionPointCoords || !node.coord?.coordinates) {
-								return null;
-							}
-							const distanceBetweenNodes = distance(
-								node.coord?.coordinates,
-								intersectionPointCoords,
-								{ units: 'meters' }
-							);
-
-							return { ...node, distance: distanceBetweenNodes };
-						})
-						.filter(node => node !== null)
-						.sort((nodeA, nodeB) => nodeA?.distance - nodeB?.distance)
-						.slice(0, 10);
-
-					let nearbyNodeIds: string[] = [];
-
-					// console.time('for-loop nearby nodes to current intersection');
-					for (const nearNode of filterNearbyNodes) {
-						if (nearNode.nodeId === nodeId) continue;
-
-						let lineBetweenNodes: Feature<LineString> | null = lineString([
-							intersectionPointCoords,
-							nearNode.coord?.coordinates,
-						]);
-
-						let lineBetweenNodeLength: number | null = length(
-							lineBetweenNodes,
-							{
-								units: 'meters',
-							}
-						);
-
-						let centerOfLineBetweenNodes: Feature<Point> | null = along(
-							lineBetweenNodes,
-							lineBetweenNodeLength / 2,
-							{ units: 'meters' }
-						);
-
-						// console.time(
-						// 	'for-loop verify line by nodes to ways before founded'
-						// );
-						for (const wayToVerify of possibleIntersectWays) {
-							if (!wayToVerify?.geometry?.coordinates) continue;
-
-							let wayToVerifyLine: Feature<LineString> | null = lineString(
-								wayToVerify.geometry?.coordinates
-							);
-
-							let distanceWithWay: number | null = pointToLineDistance(
-								centerOfLineBetweenNodes,
-								wayToVerifyLine,
-								{ units: 'meters' }
-							);
-
-							if (distanceWithWay <= 5) {
-								nearbyNodeIds.push(nearNode.nodeId);
-								break;
-							}
-
-							// CLEAN BEFORE NEXT CICLE
-							wayToVerifyLine = null;
-							distanceWithWay = null;
-						}
-						// console.timeEnd(
-						// 	'for-loop verify line by nodes to ways before founded'
-						// );
-
-						// CLEAN BEFORE NEXT CICLE
-						lineBetweenNodes = null;
-						lineBetweenNodeLength = null;
-						centerOfLineBetweenNodes = null;
-					}
-					// console.timeEnd('for-loop nearby nodes to current intersection');
-
-					let nodeOfGraph: Partial<IGraphWayIntersection> | undefined =
-						graphMap.get(nodeId);
-
-					if (!nodeOfGraph) {
-						nodeOfGraph = {
-							nodeId,
-							coord: {
-								type: 'Point',
-								coordinates: [
-									intersectionPointCoords[0],
-									intersectionPointCoords[1],
-								],
-							},
-							connections: nearbyNodeIds,
-						};
-
-						graphMap.set(nodeId, nodeOfGraph);
-
-						spatialTree.insert({
-							nodeId: nodeOfGraph.nodeId,
-							coord: { ...nodeOfGraph.coord },
-							minX: intersectionPointCoords[0],
-							minY: intersectionPointCoords[1],
-							maxX: intersectionPointCoords[0],
-							maxY: intersectionPointCoords[1],
-						});
-					} else {
-						graphMap.set(nodeId, {
-							...nodeOfGraph,
-							connections: nearbyNodeIds,
-						});
-					}
-
-					// CLEAN BEFORE NEXT CICLE
-					intersectionPointCoords = null;
-					nodeId = null;
-					nearbyNodes.length = 0;
-					nearbyNodeIds.length = 0;
-					nodeOfGraph = undefined;
-					filterNearbyNodes.length = 0;
-				}
-				// console.timeEnd('for-loop real intersect list');
-
-				// CLEAN BEFORE NEXT CICLE
-				intersectWayLine = null;
-				intersectCollection = null;
-			}
-			// console.timeEnd('for-loop intersect as way list');
-
-			mainWayLine = null;
- */

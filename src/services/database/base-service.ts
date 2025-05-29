@@ -1,5 +1,6 @@
 import { FilterQuery, Model, PaginateModel, PaginateResult } from 'mongoose';
 import { BaseDocument } from '../../models/interface/base-document';
+import { loggerError } from '@maur025/core-logger';
 
 export abstract class BaseService<T extends BaseDocument> {
 	protected abstract serviceModel(): Model<T>;
@@ -18,8 +19,12 @@ export abstract class BaseService<T extends BaseDocument> {
 			.exec();
 	}
 
-	public async saveAll(dataList: T[]): Promise<void> {
-		await this.serviceModel().insertMany(dataList);
+	public async saveAll(dataList: Partial<T>[]): Promise<void> {
+		try {
+			await this.serviceModel().insertMany(dataList, { ordered: false });
+		} catch (error) {
+			loggerError(`Error in insertMany: ${error?.toString()}`);
+		}
 	}
 
 	public async existsById(id: string): Promise<boolean> {
