@@ -1,7 +1,7 @@
 import { Position } from 'geojson';
 
 export interface AvailableNode {
-	_id: string;
+	_id?: string;
 	nodeId: string;
 	coord: {
 		type: 'Point';

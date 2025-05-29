@@ -74,32 +74,46 @@ if (cluster.isPrimary && numberCpus > 2) {
 		for (const id in cluster.workers) {
 			cluster.workers[id]?.process.kill('SIGINT');
 		}
+		try {
+			await cleanDeviceBot();
+			await disconnectDatabase();
 
-		await cleanDeviceBot();
-		await disconnectDatabase();
+			if (redisClient) {
+				await redisClient.quit();
+			}
 
-		if (redisClient) {
-			await redisClient.quit();
+			httpServer.close(() => {
+				console.log('[shutdown] server close');
+
+				setTimeout(() => process.exit(0), 100);
+			});
+		} catch (error) {
+			console.error('[shutdown] error in close server', error);
+			setTimeout(() => process.exit(1), 100);
 		}
-
-		httpServer.close();
-		process.exit(0);
 	});
 
 	process.on('SIGTERM', async () => {
 		for (const id in cluster.workers) {
 			cluster.workers[id]?.process.kill('SIGINT');
 		}
+		try {
+			await cleanDeviceBot();
+			await disconnectDatabase();
 
-		await cleanDeviceBot();
-		await disconnectDatabase();
+			if (redisClient) {
+				await redisClient.quit();
+			}
 
-		if (redisClient?.isOpen) {
-			await redisClient.quit();
+			httpServer.close(() => {
+				console.log('[shutdown] server close');
+
+				setTimeout(() => process.exit(0), 100);
+			});
+		} catch (error) {
+			console.error('[shutdown] error in close server', error);
+			setTimeout(() => process.exit(1), 100);
 		}
-
-		httpServer.close();
-		process.exit(0);
 	});
 
 	process.on('exit', () => {

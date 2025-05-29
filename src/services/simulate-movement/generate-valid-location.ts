@@ -1,20 +1,13 @@
 import { transitArea } from '@config/transit-area';
-import {
-	along,
-	bbox,
-	featureCollection,
-	length,
-	lineString,
-	point,
-	randomPosition,
-} from '@turf/turf';
-import { BBox, Feature, LineString, Position } from 'geojson';
-import { IWay } from '@models/schema/way-schema';
-import { wayService } from '../database/way-service';
+import { bbox, featureCollection, point, randomPosition } from '@turf/turf';
+import { BBox, Position } from 'geojson';
+import { intersectionNodeCache } from '@cache/intersection-node-cache';
+import { around } from 'geokdbush';
+import { AvailableNode } from '@models/data/available-node';
 
 const { topRight, topLeft, bottomLeft, bottomRight } = transitArea;
 
-export const generateValidLocation = async (): Promise<Position> => {
+export const generateValidLocation = (): Position => {
 	const transitAreaPoints = featureCollection([
 		point([topRight.lon, topRight.lat]),
 		point([topLeft.lon, topLeft.lat]),
@@ -23,21 +16,27 @@ export const generateValidLocation = async (): Promise<Position> => {
 	]);
 
 	const transitAreaBox: BBox = bbox(transitAreaPoints);
+	const newPosition: Position = randomPosition(transitAreaBox);
 
-	let nearbyWays: IWay[] = [];
+	const nodeNearbiesIndexList: number[] = around(
+		intersectionNodeCache.getIndexedNodes(),
+		newPosition[0],
+		newPosition[1],
+		1
+	);
 
-	while (!nearbyWays.length) {
-		const newPosition: Position = randomPosition(transitAreaBox);
+	const indexLimit: number = nodeNearbiesIndexList[0] ?? 0;
+	let index: number = 0;
+	let nodeToUse: Partial<AvailableNode> | null = null;
 
-		nearbyWays = await wayService.findNearby([newPosition[0], newPosition[1]]);
+	for (const node of intersectionNodeCache.getNodes().values()) {
+		if (index === indexLimit) {
+			nodeToUse = node;
+			break;
+		}
+
+		index++;
 	}
 
-	const wayLine: Feature<LineString> = lineString(
-		nearbyWays[0].geometry?.coordinates
-	);
-	const wayLength: number = length(wayLine);
-
-	const randomDistance: number = Math.random() * wayLength;
-
-	return along(wayLine, randomDistance).geometry?.coordinates;
+	return nodeToUse?.coord?.coordinates ?? [0, 0];
 };
