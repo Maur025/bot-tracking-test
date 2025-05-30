@@ -18,8 +18,8 @@ import { loggerError } from '@maur025/core-logger';
 
 const { IGNITION_ON, REPLY_CURRENT_PASSIVE } = deviceEvents;
 
-const SPEED = 14;
-const INTERVAL = 10;
+const SPEED = 13;
+const INTERVAL = 5;
 
 export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 	if (!bot) {
@@ -31,63 +31,75 @@ export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 		return;
 	}
 
-	// if (bot.ignition === '0') {
-	// 	bot.ignition = '1';
-	// 	bot.event = IGNITION_ON;
+	if (bot.ignition === '0') {
+		bot.ignition = '1';
+		bot.event = IGNITION_ON;
 
-	// 	const payload: string = getMeiTrackPayload({ bot });
-	// 	emitDataForUdp(payload);
-	// 	await simulateDelay(1);
+		const payload: string = getMeiTrackPayload({ bot });
+		emitDataForUdp(payload);
 
-	// 	return;
-	// }
+		const timeToWait = new Date();
+		timeToWait.setSeconds(timeToWait.getSeconds() + 1.5);
 
-	// if (!JSON.parse(bot.assignedRoute ?? 'true')) {
-	// 	bot.routeTravel = await getRouteToTravel({ bot });
-	// 	bot.assignedRoute = 'true';
+		bot.programWait = timeToWait;
 
-	// 	const payload: string = getMeiTrackPayload({ bot });
-	// 	emitDataForUdp(payload);
-	// 	await simulateDelay(1);
+		return;
+	}
 
-	// 	return;
-	// }
+	if (!JSON.parse(bot.assignedRoute ?? 'true')) {
+		bot.routeTravel = await getRouteToTravel({ bot });
+		bot.assignedRoute = 'true';
 
-	// if (bot.assignedRoute && bot.routeTravel?.length) {
-	// 	const stepMeter = SPEED * INTERVAL;
-	// 	const pathLine: Feature<LineString> = lineStringTurf([...bot.routeTravel]);
+		const payload: string = getMeiTrackPayload({ bot });
+		emitDataForUdp(payload);
 
-	// 	bot.event = REPLY_CURRENT_PASSIVE;
-	// 	bot.speed = (SPEED * 3.6).toFixed(2);
+		const timeToWait = new Date();
+		timeToWait.setSeconds(timeToWait.getSeconds() + 3);
 
-	// 	const currentPoint = point([Number(bot.lon), Number(bot.lat)]);
-	// 	const distanceOfLine = pointToLineDistance(currentPoint, pathLine, {
-	// 		units: 'meters',
-	// 	});
+		bot.programWait = timeToWait;
 
-	// 	if (distanceOfLine > 25) {
-	// 		bot.routeTravel = [];
-	// 		bot.assignedRoute = 'false';
-	// 		return;
-	// 	}
+		return;
+	}
 
-	// 	bot.distanceCurrentlyTraveled =
-	// 		(bot.distanceCurrentlyTraveled ?? 0) + stepMeter;
+	if (bot.assignedRoute && bot.routeTravel?.length) {
+		const stepMeter = SPEED * INTERVAL;
+		const pathLine: Feature<LineString> = lineStringTurf([...bot.routeTravel]);
 
-	// 	const deviceStep: Feature<Point> = alongTurf(
-	// 		pathLine,
-	// 		bot.distanceCurrentlyTraveled,
-	// 		{ units: 'meters' }
-	// 	);
+		bot.event = REPLY_CURRENT_PASSIVE;
+		bot.speed = (SPEED * 3.6).toFixed(2);
 
-	// 	const [deviceStepLon = 0, deviceStepLat = 0] = deviceStep?.geometry
-	// 		?.coordinates ?? [0, 0];
+		const currentPoint = point([Number(bot.lon), Number(bot.lat)]);
+		const distanceOfLine = pointToLineDistance(currentPoint, pathLine, {
+			units: 'meters',
+		});
 
-	// 	bot.lon = deviceStepLon.toString();
-	// 	bot.lat = deviceStepLat.toString();
+		if (distanceOfLine > 25) {
+			bot.routeTravel = [];
+			bot.assignedRoute = 'false';
+			return;
+		}
 
-	// 	const payload: string = getMeiTrackPayload({ bot });
-	// 	emitDataForUdp(payload);
-	// 	await simulateDelay(INTERVAL);
-	// }
+		bot.distanceCurrentlyTraveled =
+			(bot.distanceCurrentlyTraveled ?? 0) + stepMeter;
+
+		const deviceStep: Feature<Point> = alongTurf(
+			pathLine,
+			bot.distanceCurrentlyTraveled,
+			{ units: 'meters' }
+		);
+
+		const [deviceStepLon = 0, deviceStepLat = 0] = deviceStep?.geometry
+			?.coordinates ?? [0, 0];
+
+		bot.lon = deviceStepLon.toString();
+		bot.lat = deviceStepLat.toString();
+
+		const payload: string = getMeiTrackPayload({ bot });
+		emitDataForUdp(payload);
+
+		const timeToWait = new Date();
+		timeToWait.setSeconds(timeToWait.getSeconds() + INTERVAL);
+
+		bot.programWait = timeToWait;
+	}
 };

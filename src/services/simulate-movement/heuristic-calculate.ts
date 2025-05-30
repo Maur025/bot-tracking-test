@@ -2,16 +2,12 @@ import { AvailableNode } from '@models/data/available-node';
 import { distance } from '@turf/turf';
 
 export const heuristicCalculate = (
-	nodeA: AvailableNode,
-	nodeB: AvailableNode
+	nodeA: Partial<AvailableNode>,
+	nodeB: Partial<AvailableNode>
 ): number => {
-	const {
-		coord: { coordinates: positionA },
-	} = nodeA;
+	const positionA = nodeA?.coord?.coordinates ?? [0, 0];
 
-	const {
-		coord: { coordinates: positionB },
-	} = nodeB;
+	const positionB = nodeB?.coord?.coordinates ?? [0, 0];
 
 	return distance(positionA, positionB, { units: 'meters' });
 };

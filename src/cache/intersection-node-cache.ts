@@ -39,7 +39,7 @@ class IntersectionNodeCache {
 						type: 'Point',
 						coordinates: nodeCoords,
 					},
-					connections: { ...graphIntersection.connections },
+					connections: [...graphIntersection.connections],
 				});
 
 				this.indexedNodes.add(nodeCoords[0], nodeCoords[1]);

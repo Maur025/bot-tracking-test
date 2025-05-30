@@ -11,5 +11,5 @@ export interface AvailableNode {
 	costFromStart?: number;
 	estimatedCostToGoal?: number;
 	estimatedTotalCost?: number;
-	parentNode?: AvailableNode | null;
+	parentNode?: Partial<AvailableNode> | null;
 }

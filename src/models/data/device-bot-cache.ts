@@ -25,4 +25,5 @@ export interface DeviceBotCache {
 	assignedRoute: 'true' | 'false';
 	routeTravel?: Position[];
 	distanceCurrentlyTraveled?: number;
+	programWait?: Date;
 }

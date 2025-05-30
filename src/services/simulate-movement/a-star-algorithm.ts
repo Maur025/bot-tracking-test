@@ -1,27 +1,33 @@
 import { AvailableNode } from '@models/data/available-node';
 import { heuristicCalculate } from './heuristic-calculate';
 import { loggerDebug } from '@maur025/core-logger';
+import { intersectionNodeCache } from '@cache/intersection-node-cache';
 
 interface Request {
-	startNode: AvailableNode;
-	goalNode: AvailableNode;
-	availableNodes: Map<string, AvailableNode>;
+	startNode: Partial<AvailableNode>;
+	goalNode: Partial<AvailableNode>;
 }
 
-export const aStarAlgorithm = async ({
+export const aStarAlgorithm = ({
 	startNode,
 	goalNode,
-	availableNodes,
-}: Request): Promise<AvailableNode | null> => {
+}: Request): Partial<AvailableNode | null> => {
 	// estimatedTotalCost(node)  = costFromStart(Node) + estimatedCostToGoal(Node)
+	const startNodeCopy = { ...startNode };
 
-	let openNodeList: AvailableNode[] = [startNode];
+	let openNodeList: Partial<AvailableNode>[] = [startNodeCopy];
+	const openNodeSet = new Set<string>();
+	openNodeSet.add(startNodeCopy.nodeId as string);
+
 	const closedNodeList: Set<string> = new Set<string>();
 
-	startNode.costFromStart = 0;
-	startNode.estimatedCostToGoal = heuristicCalculate(startNode, goalNode);
-	startNode.estimatedTotalCost =
-		startNode.costFromStart + startNode.estimatedCostToGoal;
+	startNodeCopy.costFromStart = 0;
+	startNodeCopy.estimatedCostToGoal = heuristicCalculate(
+		startNodeCopy,
+		goalNode
+	);
+	startNodeCopy.estimatedTotalCost =
+		startNodeCopy.costFromStart + startNodeCopy.estimatedCostToGoal;
 
 	while (openNodeList.length > 0) {
 		openNodeList.sort(
@@ -29,7 +35,10 @@ export const aStarAlgorithm = async ({
 				(nodeA.estimatedTotalCost ?? 0) - (nodeB.estimatedTotalCost ?? 0)
 		);
 
-		const currentNode: AvailableNode | undefined = openNodeList.shift();
+		const currentNode: Partial<AvailableNode> | undefined =
+			openNodeList.shift();
+
+		openNodeSet.delete(currentNode?.nodeId ?? '');
 
 		if (!currentNode) {
 			break;
@@ -37,22 +46,30 @@ export const aStarAlgorithm = async ({
 
 		if (currentNode.nodeId === goalNode.nodeId) {
 			loggerDebug(`GOAL NODE FOUND! Node ID: ${goalNode.nodeId}`);
+			openNodeSet.clear();
+			closedNodeList.clear();
+			openNodeList.length = 0;
+
 			return currentNode;
 		}
 
 		closedNodeList.add(currentNode.nodeId ?? '');
 
-		for (const neighborId of currentNode.connections ?? []) {
+		for (const neighborId of currentNode?.connections ?? []) {
 			if (neighborId === currentNode.nodeId || closedNodeList.has(neighborId)) {
 				continue;
 			}
 
-			const neighborNode: AvailableNode | undefined =
-				availableNodes.get(neighborId);
+			const neighborNodeOriginal: Partial<AvailableNode> | undefined =
+				intersectionNodeCache.getNodes().get(neighborId);
 
-			if (!neighborNode) {
+			if (!neighborNodeOriginal) {
 				continue;
 			}
+
+			const neighborNode: Partial<AvailableNode> = {
+				...neighborNodeOriginal,
+			};
 
 			const tentativeCostFromStart: number =
 				(currentNode.costFromStart ?? 0) +
@@ -72,12 +89,17 @@ export const aStarAlgorithm = async ({
 
 				neighborNode.parentNode = currentNode;
 
-				if (!openNodeList.find(node => node.nodeId === neighborId)) {
+				if (!openNodeSet.has(neighborId)) {
 					openNodeList.push(neighborNode);
+					openNodeSet.add(neighborId);
 				}
 			}
 		}
 	}
+
+	openNodeSet.clear();
+	closedNodeList.clear();
+	openNodeList.length = 0;
 
 	loggerDebug('PATH NOT FOUNDED');
 	return null;
