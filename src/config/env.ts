@@ -13,6 +13,8 @@ const {
 	DB_NAME = 'DeviceBotDb',
 	UDP_HOST = 'localhost',
 	UDP_PORT = '8888',
+	CPU_TO_USE = '1',
+	DEVICE_QUANTITY = '1',
 } = process.env;
 
 const env: Environment = {
@@ -28,6 +30,8 @@ const env: Environment = {
 	DB_NAME,
 	UDP_HOST,
 	UDP_PORT: Number(UDP_PORT),
+	CPU_TO_USE: Number(CPU_TO_USE),
+	DEVICE_QUANTITY: Number(DEVICE_QUANTITY),
 };
 
 export default env;

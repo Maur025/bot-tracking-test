@@ -1,4 +1,7 @@
+import env from '@config/env';
 import { pipe } from '@maur025/core-common';
+
+const { CPU_TO_USE } = env;
 
 const getQuantityCpuSystemReserved = (numberCpus: number): number => {
 	switch (numberCpus) {
@@ -6,23 +9,25 @@ const getQuantityCpuSystemReserved = (numberCpus: number): number => {
 			return 0;
 		}
 		case 2: {
-			return 1;
+			return calculateCpuToReserve(2);
 		}
-		case 4:
+		case 4: {
+			return calculateCpuToReserve(4);
+		}
 		case 6: {
-			return 2;
+			return calculateCpuToReserve(6);
 		}
 		case 8: {
-			return 6;
+			return calculateCpuToReserve(8);
 		}
 		case 12: {
-			return 4;
+			return calculateCpuToReserve(12);
 		}
 		case 16: {
-			return 8;
+			return calculateCpuToReserve(16);
 		}
 		case 20: {
-			return 16;
+			return calculateCpuToReserve(20);
 		}
 		default: {
 			return numberCpus - 1;
@@ -30,9 +35,13 @@ const getQuantityCpuSystemReserved = (numberCpus: number): number => {
 	}
 };
 
+const calculateCpuToReserve = (totalCpus: number) => {
+	return CPU_TO_USE < totalCpus ? totalCpus - CPU_TO_USE : totalCpus - 1;
+};
+
 export const getWorkersToCreate = (numberCpus: number): number =>
 	pipe(
 		numberCpus,
 		getQuantityCpuSystemReserved,
-		(availableCpus: number) => numberCpus - availableCpus
+		(reservedCpus: number) => numberCpus - reservedCpus
 	);

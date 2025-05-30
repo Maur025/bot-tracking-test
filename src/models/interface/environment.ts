@@ -11,4 +11,6 @@ export default interface Environment {
 	DB_NAME: string;
 	UDP_HOST: string;
 	UDP_PORT: number;
+	CPU_TO_USE: number;
+	DEVICE_QUANTITY: number;
 }
