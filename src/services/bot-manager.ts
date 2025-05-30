@@ -60,8 +60,10 @@ class BotManager {
 	): Promise<void> => {
 		for (const device of deviceList) {
 			if (
-				(device.lat && device.lat !== '0') ||
-				(device.lon && device.lon !== '0')
+				device.lat &&
+				device.lat !== '0' &&
+				device.lon &&
+				device.lon !== '0'
 			) {
 				continue;
 			}
@@ -96,7 +98,22 @@ class BotManager {
 		for (let i = 0; i < botsArray.length; i += this.BATCH_SIZE) {
 			const batch = botsArray.slice(i, i + this.BATCH_SIZE);
 
-			await Promise.all(batch.map(bot => this.tick(bot)));
+			const dateNow = new Date();
+
+			await Promise.all(
+				batch.map(bot => {
+					if (!bot.programWait) {
+						return this.tick(bot);
+					}
+
+					if (dateNow >= bot.programWait) {
+						bot.programWait = undefined;
+						return this.tick(bot);
+					}
+
+					return Promise.resolve();
+				})
+			);
 
 			await simulateDelay(0.03);
 		}
@@ -113,7 +130,7 @@ class BotManager {
 	private readonly tick = async (bot: DeviceBotCache): Promise<void> => {
 		const actionToExecute: BotAction = this.chooseWeightAction();
 
-		// actionToExecute.execute(bot);
+		actionToExecute.execute(bot);
 	};
 
 	private readonly chooseWeightAction = (): BotAction => {

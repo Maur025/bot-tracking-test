@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { socketTrackConnect } from '@socket/client/socket-track-client';
 import cluster, { Worker } from 'node:cluster';
 import { cpus } from 'node:os';
-import { loggerDebug, loggerInfo } from '@maur025/core-logger';
+import { loggerDebug, loggerError, loggerInfo } from '@maur025/core-logger';
 import { createServer, Server } from 'node:http';
 import { setupMaster } from '@socket.io/sticky';
 import env from '@config/env';
@@ -20,6 +20,8 @@ import { registerWayToDatabase } from '@services/register-way-to-database';
 import { initWayGraph } from '@services/init-way-graph';
 import { initializeBotDevice } from '@services/initialize-bot-device';
 import { cleanDeviceBot } from '@services/clean-device-bot';
+import cleanup from 'node-cleanup';
+import { syncDataTemp } from '@services/sync-data-temp';
 
 const numberCpus = cpus().length;
 
@@ -63,61 +65,36 @@ if (cluster.isPrimary && numberCpus > 2) {
 		loggerDebug(`Worker [${worker.process.pid}] running.`);
 	});
 
-	cluster.on('exit', () => {});
-
 	await registerWayToDatabase();
 
 	await initWayGraph();
+
+	await syncDataTemp();
 	await initializeBotDevice();
 
+	let shuttingdown: boolean = false;
+
+	cleanup((exitCode, signal) => {
+		if (shuttingdown) {
+			return;
+		}
+
+		shuttingdown = true;
+		loggerInfo(`[primary] shutting down...`);
+		return false;
+	});
+
 	process.on('SIGINT', async () => {
-		for (const id in cluster.workers) {
-			cluster.workers[id]?.process.kill('SIGINT');
-		}
-		try {
-			await cleanDeviceBot();
-			await disconnectDatabase();
+		await cleanDeviceBot();
+		await disconnectDatabase();
 
-			if (redisClient) {
-				await redisClient.quit();
-			}
-
-			httpServer.close(() => {
-				console.log('[shutdown] server close');
-
-				setTimeout(() => process.exit(0), 100);
-			});
-		} catch (error) {
-			console.error('[shutdown] error in close server', error);
-			setTimeout(() => process.exit(1), 100);
-		}
+		process.exit(0);
 	});
 
 	process.on('SIGTERM', async () => {
-		for (const id in cluster.workers) {
-			cluster.workers[id]?.process.kill('SIGINT');
-		}
-		try {
-			await cleanDeviceBot();
-			await disconnectDatabase();
+		await cleanDeviceBot();
+		await disconnectDatabase();
 
-			if (redisClient) {
-				await redisClient.quit();
-			}
-
-			httpServer.close(() => {
-				console.log('[shutdown] server close');
-
-				setTimeout(() => process.exit(0), 100);
-			});
-		} catch (error) {
-			console.error('[shutdown] error in close server', error);
-			setTimeout(() => process.exit(1), 100);
-		}
-	});
-
-	process.on('exit', () => {
-		loggerInfo(`[primary] server shutdown with safe exit`);
 		process.exit(0);
 	});
 } else {

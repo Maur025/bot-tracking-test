@@ -1,43 +1,43 @@
 import redisClient from '@config/redis/create-redis-client';
 import { loggerError, loggerInfo } from '@maur025/core-logger';
-import { deviceService } from './database/device-service';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { writeFileSync } from 'node:fs';
 
 export const cleanDeviceBot = async (): Promise<void> => {
-	console.log('ENTRO A LA LIMPIEZA DE DATOS');
-
 	if (!redisClient) {
 		return;
 	}
 
 	const keys = await redisClient.keys('device-bot:*');
-	console.log('cantidad de keys', keys);
 
 	if (!keys.length) {
 		return;
 	}
-	console.log('PASO EL IF KEYS');
+
+	const __filename = fileURLToPath(import.meta.url);
+	const __dirname = dirname(__filename);
+
+	const dataToSave = [];
 
 	for (const key of keys) {
-		try {
-			const [lon = '0', lat = '0', deviceId]: (string | null)[] =
-				await redisClient.hmGet(key, ['lon', 'lat', 'id']);
-
-			if (deviceId && lon !== '0' && lat !== '0') {
-				console.log('TIENE LOS DATOS NECESARIOS PARA GUARDAR');
-
-				await deviceService.update(deviceId, {
-					lastPosition: {
-						type: 'Point',
-						coordinates: [Number(lon), Number(lat)],
-					},
-				});
-			}
-		} catch (error: Error | any) {
-			loggerError(`Error processing key ${key}`, error);
-		}
+		const data = await redisClient.hGetAll(key);
+		dataToSave.push(data);
 	}
 
-	console.log('FINALIZO EL UPDATE');
+	const stringToSave = JSON.stringify(dataToSave);
+
+	try {
+		writeFileSync(
+			join(__dirname, '../cache/device-bot-data-temp.json'),
+			stringToSave,
+			'utf-8'
+		);
+
+		loggerInfo('data save successfull');
+	} catch (error) {
+		loggerError(`data save failed: ${error}`);
+	}
 
 	await redisClient.del(keys);
 	loggerInfo(`[redis-primary] Device bot cache clean successfull`);

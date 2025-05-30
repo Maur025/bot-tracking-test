@@ -1,11 +1,9 @@
-import { IGraphWayIntersection } from '@models/schema/graph-way-intersection';
-import { distance as turfDistance } from '@turf/turf';
 import { Position } from 'geojson';
-import { getAvailableNodesMap } from './get-available-nodes-map';
 import { aStarAlgorithm } from './a-star-algorithm';
 import { AvailableNode } from '@models/data/available-node';
 import { buildPathByLastNode } from './build-path-by-last-node';
-import { graphWayIntersectionService } from '../database/graph-way-intersection-service';
+import { intersectionNodeCache } from '@cache/intersection-node-cache';
+import { around } from 'geokdbush';
 
 interface Request {
 	startPosition: Position;
@@ -16,41 +14,37 @@ export const findOptimalRoute = async ({
 	startPosition,
 	goalPosition,
 }: Request): Promise<Position[]> => {
-	const totalDistance: number = turfDistance(startPosition, goalPosition, {
-		units: 'meters',
-	});
+	const startNode = getNodeNearby(startPosition);
 
-	let startNodeFounded: IGraphWayIntersection[] =
-		await graphWayIntersectionService.findNearby({ position: startPosition });
+	const goalNode = getNodeNearby(goalPosition);
 
-	let goalNodeFounded: IGraphWayIntersection[] =
-		await graphWayIntersectionService.findNearby({ position: goalPosition });
+	if (!startNode || !goalNode) return [];
 
-	const intermediateNodes: IGraphWayIntersection[] =
-		await graphWayIntersectionService.findNearbiesByDistance({
-			position: startPosition,
-			maxDistance: totalDistance * 1.25,
-		});
-
-	let startNode: AvailableNode = startNodeFounded[0].toObject();
-	let goalNode: AvailableNode = goalNodeFounded[0].toObject();
-
-	const availableNodes: Map<string, AvailableNode> = getAvailableNodesMap({
-		intermediateNodes,
-		startNode,
-		goalNode,
-	});
-
-	const resultingNode: AvailableNode | null = await aStarAlgorithm({
-		startNode: { ...startNode },
+	const resultingNode: Partial<AvailableNode> | null = aStarAlgorithm({
+		startNode: startNode,
 		goalNode: { ...goalNode },
-		availableNodes,
 	});
-
-	availableNodes.clear();
-	intermediateNodes.length = 0;
-	(startNodeFounded as any) = null;
-	(goalNodeFounded as any) = null;
 
 	return buildPathByLastNode({ lastNode: resultingNode });
+};
+
+const getNodeNearby = (
+	position: Position
+): Partial<AvailableNode> | undefined => {
+	const indexOfStartNodes = around(
+		intersectionNodeCache.getIndexedNodes(),
+		position[0],
+		position[1],
+		1
+	);
+
+	let index = 0;
+
+	for (const node of intersectionNodeCache.getNodes().values()) {
+		if (index === indexOfStartNodes[0]) {
+			return { ...node };
+		}
+
+		index++;
+	}
 };
