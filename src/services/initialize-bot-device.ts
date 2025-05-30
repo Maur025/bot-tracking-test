@@ -7,9 +7,10 @@ import { getSocketBridge } from '@socket/client/socket-bridge-client';
 import { loggerWarn } from '@maur025/core-logger';
 import { SocketTopic } from '@src/socket-topics';
 import { devicePublisher } from '@kafkaMain/publisher/device-publisher';
+import env from '@config/env';
 
 const { DEVICES_PUBLISHED_IN_KAFKA } = SocketTopic;
-const DEVICE_QUANTITY = 1000;
+const { DEVICE_QUANTITY } = env;
 
 export const initializeBotDevice = async (): Promise<void> => {
 	const keys = await redisClient.keys('bot-process:*');

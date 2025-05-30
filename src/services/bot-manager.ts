@@ -3,7 +3,6 @@ import redisClient from '@config/redis/create-redis-client';
 import { loggerDebug, loggerWarn } from '@maur025/core-logger';
 import { DeviceBotCache } from '@models/data/device-bot-cache';
 import { simulateDelay } from './simulate-movement/simulate-delay';
-import { intersectionNodeCache } from '@cache/intersection-node-cache';
 import { generateValidLocation } from './simulate-movement/generate-valid-location';
 
 class BotManager {
