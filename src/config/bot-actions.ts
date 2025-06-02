@@ -1,6 +1,9 @@
 import { loggerDebug } from '@maur025/core-logger';
 import { DeviceBotCache } from '@models/data/device-bot-cache';
+import { botDecreaseSpeed } from '@services/bot-action/bot-decrease-speed';
+import { botIncreaseSpeed } from '@services/bot-action/bot-increase-speed';
 import { botMove } from '@services/bot-action/bot-move';
+import { botStay } from '@services/bot-action/bot-stay';
 
 export interface BotAction {
 	name: string;
@@ -11,32 +14,27 @@ export interface BotAction {
 export const botActions: BotAction[] = [
 	{
 		name: 'move',
-		weight: 40,
+		weight: 85,
 		execute: botMove,
 	},
 	{
 		name: 'increase speed',
-		weight: 20,
-		execute: async bot => loggerDebug('bot increasing speed'),
+		weight: 4,
+		execute: botIncreaseSpeed,
 	},
 	{
 		name: 'reduce speed',
-		weight: 20,
-		execute: async bot => loggerDebug('bot reducing speed'),
+		weight: 3,
+		execute: botDecreaseSpeed,
 	},
 	{
 		name: 'stay',
-		weight: 10,
-		execute: async bot => loggerDebug('bot stay to n minutes/hours'),
-	},
-	{
-		name: 'power off',
-		weight: 5,
-		execute: async bot => loggerDebug('bot power off to n minutes/hours'),
-	},
+		weight: 7,
+		execute: botStay,
+	}, // cuando se supere un numero de minutos se apagara el motor tanto el tiempo de espera como el tiempo antes de apagar seran aleatorios
 	{
 		name: 'deviate',
-		weight: 5,
+		weight: 1,
 		execute: async bot => loggerDebug('bot deviate or change route'),
 	},
 ];

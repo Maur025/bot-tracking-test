@@ -1,9 +1,14 @@
 import { BotAction, botActions } from '@config/bot-actions';
 import redisClient from '@config/redis/create-redis-client';
-import { loggerDebug, loggerWarn } from '@maur025/core-logger';
+import { loggerWarn } from '@maur025/core-logger';
 import { DeviceBotCache } from '@models/data/device-bot-cache';
 import { simulateDelay } from './simulate-movement/simulate-delay';
 import { generateValidLocation } from './simulate-movement/generate-valid-location';
+import { programAction } from './program-action';
+import { backupInRedis } from './simulate-movement/backup-in-redis';
+import { getDeviceIdsByPid } from './bot-action/get-device-ids-by-pid';
+import { getDevicesByids } from './bot-action/get-devices-by-ids';
+import { setMemoryMonitor } from '@utils/set-memory-monitor';
 
 class BotManager {
 	private readonly BATCH_SIZE = 50;
@@ -15,20 +20,14 @@ class BotManager {
 	private isRunning = false;
 
 	public readonly initializeBots = async (): Promise<void> => {
-		const deviceIds: string[] = await redisClient.sUnion(
-			`bot-process:${process.pid}`
-		);
+		const deviceIds: string[] = await getDeviceIdsByPid();
 
 		if (!deviceIds.length) {
 			loggerWarn(`Device ids not founded ... skiping initialization`);
 			return;
 		}
 
-		const deviceList: any[] = await Promise.all(
-			deviceIds.map(async id => {
-				return await redisClient.hGetAll(`device-bot:${id}`);
-			})
-		);
+		const deviceList: any[] = await getDevicesByids(deviceIds);
 
 		deviceIds.length = 0;
 
@@ -38,18 +37,19 @@ class BotManager {
 			this.bots.set(device.id, { ...device });
 		}
 
-		loggerDebug(`[bot-manager] bots initialized... starting`);
+		programAction({
+			interval: 10,
+			lastActionDate: Date.now(),
+			action: () => setMemoryMonitor('bot-loop w', `bots: ${this.bots?.size}`),
+			units: 'seconds',
+		});
 
-		setInterval(() => {
-			const { rss, heapUsed } = process.memoryUsage();
-			loggerDebug(
-				`[tickLoop worker-${process.pid}] bots: ${this.bots.size}, RAM: ${(
-					heapUsed /
-					1024 /
-					1024
-				).toFixed(2)} MB, RSS: ${(rss / 1024 / 1024).toFixed(2)} MB`
-			);
-		}, 10000);
+		programAction({
+			interval: 15,
+			lastActionDate: Date.now(),
+			action: () => backupInRedis(this.bots),
+			units: 'minutes',
+		});
 
 		this.startBots();
 	};

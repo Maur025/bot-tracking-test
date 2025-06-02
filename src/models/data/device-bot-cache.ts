@@ -20,10 +20,11 @@ export interface DeviceBotCache {
 	analog: string; // represent value as number
 	einfo: string; // represent value as number
 	custom: string; // represent value as number
-	running: 'true' | 'false'; // string con 2 values
-	inMovement: 'true' | 'false';
+	running: 'true' | 'false'; // string con 2 values // sin uso
+	inMovement: 'true' | 'false'; // sin uso
 	assignedRoute: 'true' | 'false';
 	routeTravel?: Position[];
 	distanceCurrentlyTraveled?: number;
 	programWait?: Date;
+	speedMs: string;
 }

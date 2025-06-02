@@ -3,6 +3,9 @@ import { IDevice } from '@models/schema/device-schema';
 import redisClient from '@config/redis/create-redis-client';
 import { DeviceBotCache } from '@models/data/device-bot-cache';
 import { getPayloadKafka } from '@src/utils/json-util';
+import env from '@config/env';
+
+const { INITIAL_SPEED_MS } = env;
 
 export const deviceInitConsumerHandler = async ({
 	topic,
@@ -40,9 +43,15 @@ export const deviceInitConsumerHandler = async ({
 		running: 'true',
 		inMovement: 'false',
 		assignedRoute: 'false',
+		speedMs: INITIAL_SPEED_MS.toString(),
 	};
 
-	const { routeTravel, ...objectToSave } = deviceBotCache;
+	const {
+		routeTravel,
+		distanceCurrentlyTraveled,
+		programWait,
+		...objectToSave
+	} = deviceBotCache;
 
 	await redisClient.hSet(`device-bot:${device._id}`, objectToSave);
 	await redisClient.sAdd(`bot-process:${process.pid}`, device._id);
