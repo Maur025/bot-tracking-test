@@ -15,6 +15,9 @@ const {
 	UDP_PORT = '8888',
 	CPU_TO_USE = '1',
 	DEVICE_QUANTITY = '1',
+	MIN_SPEED_MS = '8',
+	MAX_SPEED_MS = '26',
+	INITIAL_SPEED_MS = '13',
 } = process.env;
 
 const env: Environment = {
@@ -32,6 +35,9 @@ const env: Environment = {
 	UDP_PORT: Number(UDP_PORT),
 	CPU_TO_USE: Number(CPU_TO_USE),
 	DEVICE_QUANTITY: Number(DEVICE_QUANTITY),
+	MIN_SPEED_MS: Number(MIN_SPEED_MS),
+	MAX_SPEED_MS: Number(MAX_SPEED_MS),
+	INITIAL_SPEED_MS: Number(INITIAL_SPEED_MS),
 };
 
 export default env;

@@ -1,24 +1,20 @@
 import { deviceEvents } from '@config/device-events';
 import { DeviceBotCache } from '@models/data/device-bot-cache';
-import { generateValidLocation } from '@services/simulate-movement/generate-valid-location';
 import { getMeiTrackPayload } from '@services/simulate-movement/get-mei-track-payload';
 import { getRouteToTravel } from '@services/simulate-movement/get-route-to-travel';
-import { simulateDelay } from '@services/simulate-movement/simulate-delay';
 import { emitDataForUdp } from '@utils/emit-data-for-udp';
-import { Feature, LineString, Point, Position } from 'geojson';
+import { Feature, LineString, Point } from 'geojson';
 import {
 	distance as distanceTurf,
 	lineString as lineStringTurf,
 	length as lengthTurf,
 	along as alongTurf,
-	point,
-	pointToLineDistance,
 } from '@turf/turf';
 import { loggerError } from '@maur025/core-logger';
+import { generateWait } from './generate-wait';
 
 const { IGNITION_ON, REPLY_CURRENT_PASSIVE } = deviceEvents;
 
-const SPEED = 13;
 const INTERVAL = 5;
 
 export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
@@ -38,16 +34,18 @@ export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 		const payload: string = getMeiTrackPayload({ bot });
 		emitDataForUdp(payload);
 
-		const timeToWait = new Date();
-		timeToWait.setSeconds(timeToWait.getSeconds() + 1.5);
-
-		bot.programWait = timeToWait;
+		bot.programWait = generateWait(1.5, 'seconds');
 
 		return;
 	}
 
 	if (!JSON.parse(bot.assignedRoute ?? 'true')) {
 		bot.routeTravel = await getRouteToTravel({ bot });
+
+		if (!bot.routeTravel?.length) {
+			return;
+		}
+
 		bot.assignedRoute = 'true';
 
 		const payload: string = getMeiTrackPayload({ bot });
@@ -56,31 +54,29 @@ export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 		const timeToWait = new Date();
 		timeToWait.setSeconds(timeToWait.getSeconds() + 3);
 
-		bot.programWait = timeToWait;
+		bot.programWait = generateWait(INTERVAL, 'seconds');
 
 		return;
 	}
 
 	if (bot.assignedRoute && bot.routeTravel?.length) {
-		const stepMeter = SPEED * INTERVAL;
+		const stepMeter = Number(bot.speedMs) * INTERVAL;
 		const pathLine: Feature<LineString> = lineStringTurf([...bot.routeTravel]);
+		const pathLineLength: number = lengthTurf(pathLine, { units: 'meters' });
 
 		bot.event = REPLY_CURRENT_PASSIVE;
-		bot.speed = (SPEED * 3.6).toFixed(2);
-
-		const currentPoint = point([Number(bot.lon), Number(bot.lat)]);
-		const distanceOfLine = pointToLineDistance(currentPoint, pathLine, {
-			units: 'meters',
-		});
-
-		if (distanceOfLine > 25) {
-			bot.routeTravel = [];
-			bot.assignedRoute = 'false';
-			return;
-		}
+		bot.speed = (Number(bot.speedMs) * 3.6).toFixed(2);
 
 		bot.distanceCurrentlyTraveled =
 			(bot.distanceCurrentlyTraveled ?? 0) + stepMeter;
+
+		if (bot.distanceCurrentlyTraveled >= pathLineLength) {
+			bot.assignedRoute = 'false';
+			bot.routeTravel.length = 0;
+			bot.distanceCurrentlyTraveled = 0;
+
+			return;
+		}
 
 		const deviceStep: Feature<Point> = alongTurf(
 			pathLine,
@@ -97,9 +93,6 @@ export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 		const payload: string = getMeiTrackPayload({ bot });
 		emitDataForUdp(payload);
 
-		const timeToWait = new Date();
-		timeToWait.setSeconds(timeToWait.getSeconds() + INTERVAL);
-
-		bot.programWait = timeToWait;
+		bot.programWait = generateWait(INTERVAL, 'seconds');
 	}
 };
