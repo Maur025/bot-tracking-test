@@ -12,35 +12,39 @@ export const programAction = async ({
 	lastActionDate,
 	action,
 	units = 'seconds',
-}: Request): Promise<void> => {
+}: Request): Promise<NodeJS.Timeout | null> => {
 	if (!interval || interval <= 0) {
 		loggerError(`invalid interval, skiping ...`);
-		return;
+		return null;
 	}
 
 	const intervalInMillis: number = getMilliseconds(interval, units);
+	let currentTimeout = null;
+	let nextLastActionDate = lastActionDate;
 
 	try {
 		const now = Date.now();
 
 		if (now - lastActionDate >= intervalInMillis) {
 			await action();
-			lastActionDate = now;
+			nextLastActionDate = now;
 		}
 	} catch (error) {
 		loggerError(`Error to execute action, ${error?.toString()}`);
 	} finally {
-		setTimeout(
+		currentTimeout = setTimeout(
 			() =>
 				programAction({
 					interval,
-					lastActionDate,
+					lastActionDate: nextLastActionDate,
 					action,
 					units,
 				}),
 			intervalInMillis
 		);
 	}
+
+	return currentTimeout;
 };
 
 const getMilliseconds = (

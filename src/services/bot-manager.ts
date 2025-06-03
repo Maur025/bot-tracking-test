@@ -44,14 +44,7 @@ class BotManager {
 			units: 'seconds',
 		});
 
-		programAction({
-			interval: 15,
-			lastActionDate: Date.now(),
-			action: () => backupInRedis(this.bots),
-			units: 'minutes',
-		});
-
-		this.startBots();
+		// this.startBots();
 	};
 
 	private readonly assignValidCoords = async (
@@ -82,13 +75,23 @@ class BotManager {
 		if (this.isRunning) return;
 
 		this.isRunning = true;
+
+		programAction({
+			interval: 15,
+			lastActionDate: Date.now(),
+			action: () => backupInRedis(this.bots),
+			units: 'minutes',
+		});
+
 		this.tickLoop();
 	};
 
-	public readonly stopBots = (): void => {
+	public readonly stopBots = async (): Promise<void> => {
 		if (!this.isRunning) return;
 
 		this.isRunning = false;
+
+		await backupInRedis(this.bots);
 	};
 
 	private readonly tickLoop = async (): Promise<void> => {
@@ -152,6 +155,8 @@ class BotManager {
 
 		return botActions[0];
 	};
+
+	public readonly getIsRunning = (): boolean => this.isRunning;
 }
 
 export const botManager = new BotManager();

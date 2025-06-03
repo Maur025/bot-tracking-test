@@ -18,7 +18,15 @@ const {
 	ROOM_JOIN_RESPONSE,
 	ROOM_LEAVE_RESPONSE,
 	DEVICES_PUBLISHED_IN_KAFKA,
+	BOT_GET_IS_RUNNING,
+	BOT_IS_RUNNING,
+	BOT_REQ_STOP,
+	BOT_REQ_STOP_RESPONSE,
+	BOT_REQ_START,
+	BOT_REQ_START_RESPONSE,
 	PROPAGATE_ORDER_INITIALIZE_BOTS,
+	PROPAGATE_START_BOTS,
+	PROPAGATE_STOP_BOTS,
 } = SocketTopic;
 
 let io: Server;
@@ -84,12 +92,38 @@ export const initSocketServer = async (
 
 			botManager.initializeBots();
 		});
+
+		socket.on(BOT_GET_IS_RUNNING, () => {
+			socket.emit(BOT_IS_RUNNING, botManager.getIsRunning());
+		});
+
+		socket.on(BOT_REQ_START, () => {
+			io.serverSideEmit(PROPAGATE_START_BOTS);
+			botManager.startBots();
+
+			socket.emit(BOT_REQ_START_RESPONSE);
+		});
+
+		socket.on(BOT_REQ_STOP, async () => {
+			io.serverSideEmit(PROPAGATE_STOP_BOTS);
+			await botManager.stopBots();
+
+			socket.emit(BOT_REQ_STOP_RESPONSE);
+		});
 	});
 
 	io.on(PROPAGATE_ORDER_INITIALIZE_BOTS, async (message: string) => {
 		await intersectionNodeCache.initialize();
 		loggerDebug(message);
 		botManager.initializeBots();
+	});
+
+	io.on(PROPAGATE_START_BOTS, () => {
+		botManager.startBots();
+	});
+
+	io.on(PROPAGATE_STOP_BOTS, async () => {
+		await botManager.stopBots();
 	});
 
 	return io;

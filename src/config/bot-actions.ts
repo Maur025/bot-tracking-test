@@ -14,7 +14,7 @@ export interface BotAction {
 export const botActions: BotAction[] = [
 	{
 		name: 'move',
-		weight: 85,
+		weight: 90,
 		execute: botMove,
 	},
 	{
@@ -29,7 +29,7 @@ export const botActions: BotAction[] = [
 	},
 	{
 		name: 'stay',
-		weight: 7,
+		weight: 2,
 		execute: botStay,
 	}, // cuando se supere un numero de minutos se apagara el motor tanto el tiempo de espera como el tiempo antes de apagar seran aleatorios
 	{
