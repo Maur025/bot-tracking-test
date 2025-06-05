@@ -42,7 +42,7 @@ export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 	if (!JSON.parse(bot.assignedRoute ?? 'true')) {
 		bot.routeTravel = await getRouteToTravel({ bot });
 
-		if (!bot.routeTravel?.length) {
+		if (bot.routeTravel?.length < 2) {
 			return;
 		}
 
@@ -59,7 +59,11 @@ export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 		return;
 	}
 
-	if (bot.assignedRoute && bot.routeTravel?.length) {
+	if (
+		bot.assignedRoute &&
+		bot?.routeTravel?.length &&
+		bot?.routeTravel?.length >= 2
+	) {
 		const stepMeter = Number(bot.speedMs) * INTERVAL;
 		const pathLine: Feature<LineString> = lineStringTurf([...bot.routeTravel]);
 		const pathLineLength: number = lengthTurf(pathLine, { units: 'meters' });
