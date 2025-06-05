@@ -47,7 +47,7 @@ export const programAction = async ({
 	return currentTimeout;
 };
 
-const getMilliseconds = (
+export const getMilliseconds = (
 	time: number,
 	units: 'milliseconds' | 'seconds' | 'minutes' | 'hours' | 'days'
 ) => {
