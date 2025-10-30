@@ -5,15 +5,12 @@ import { intersectionNodeCache } from '@cache/intersection-node-cache';
 import { around } from 'geokdbush';
 import { AvailableNode } from '@models/data/available-node';
 
-const { topRight, topLeft, bottomLeft, bottomRight } = transitArea;
+const { polygonCoords } = transitArea;
 
 export const generateValidLocation = (): Position => {
-	const transitAreaPoints = featureCollection([
-		point([topRight.lon, topRight.lat]),
-		point([topLeft.lon, topLeft.lat]),
-		point([bottomLeft.lon, bottomLeft.lat]),
-		point([bottomRight.lon, bottomRight.lat]),
-	]);
+	const transitAreaPoints = featureCollection(
+		polygonCoords.map((coord: Position) => point(coord))
+	);
 
 	const transitAreaBox: BBox = bbox(transitAreaPoints);
 	const newPosition: Position = randomPosition(transitAreaBox);
