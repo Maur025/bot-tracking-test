@@ -11,7 +11,10 @@ const { INITIAL_SPEED_MS } = env;
 const { REPLY_CURRENT_PASSIVE, IGNITION_OFF } = deviceEvents;
 
 export const botStay = async (bot: DeviceBotCache): Promise<void> => {
-	const timeToStayInMin: number = Math.floor(6 + Math.random() * 10);
+	const timeToStayInMin: number = Math.max(
+		Math.floor(-5 + Math.random() * 10),
+		1
+	);
 
 	bot.speed = '0.00';
 	bot.speedMs = INITIAL_SPEED_MS.toString();
@@ -21,7 +24,7 @@ export const botStay = async (bot: DeviceBotCache): Promise<void> => {
 		let eventToEmit = REPLY_CURRENT_PASSIVE;
 		const milliseconds = getMilliseconds(index, 'minutes');
 
-		if (timeToStayInMin > 12 && index === 12) {
+		if (timeToStayInMin > 3 && index === 3) {
 			eventToEmit = IGNITION_OFF;
 			bot.ignition = '0';
 		}

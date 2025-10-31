@@ -12,18 +12,15 @@ import {
 import { BBox, Position } from 'geojson';
 import { around } from 'geokdbush';
 
-const { topRight, topLeft, bottomLeft, bottomRight } = transitArea;
+const { polygonCoords } = transitArea;
 
 export const generateValidPositionToMove = (
 	position: Position,
 	maxDistance: number = 1000
 ): Position => {
-	const transitAreaPoints = featureCollection([
-		point([topRight.lon, topRight.lat]),
-		point([topLeft.lon, topLeft.lat]),
-		point([bottomLeft.lon, bottomLeft.lat]),
-		point([bottomRight.lon, bottomRight.lat]),
-	]);
+	const transitAreaPoints = featureCollection(
+		polygonCoords.map((coord: Position) => point(coord))
+	);
 
 	const transitAreaBox: BBox = bbox(transitAreaPoints);
 
