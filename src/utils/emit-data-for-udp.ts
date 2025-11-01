@@ -12,7 +12,7 @@ export const emitDataForUdp = (data: string): void => {
 		if (error) {
 			loggerError('Error sending message: ', error);
 		} else {
-			loggerDebug(`GPS data send: ${message.toString()}`);
+			loggerDebug(`[UDP] GPS data send: ${message.toString()}`);
 		}
 	});
 };

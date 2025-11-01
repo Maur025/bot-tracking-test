@@ -12,6 +12,7 @@ import {
 } from '@turf/turf';
 import { loggerError } from '@maur025/core-logger';
 import { generateWait } from './generate-wait';
+import { emitDataForTcp } from '@utils/emit-data-for-tcp';
 
 const { IGNITION_ON, REPLY_CURRENT_PASSIVE } = deviceEvents;
 
@@ -32,7 +33,8 @@ export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 		bot.event = IGNITION_ON;
 
 		const payload: string = getMeiTrackPayload({ bot });
-		emitDataForUdp(payload);
+		// emitDataForUdp(payload);
+		emitDataForTcp(payload);
 
 		bot.programWait = generateWait(1.5, 'seconds');
 
@@ -49,7 +51,9 @@ export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 		bot.assignedRoute = 'true';
 
 		const payload: string = getMeiTrackPayload({ bot });
-		emitDataForUdp(payload);
+		// emitDataForUdp(payload);
+
+		emitDataForTcp(payload);
 
 		const timeToWait = new Date();
 		timeToWait.setSeconds(timeToWait.getSeconds() + 3);
@@ -95,7 +99,8 @@ export const botMove = async (bot?: DeviceBotCache): Promise<void> => {
 		bot.lat = deviceStepLat.toString();
 
 		const payload: string = getMeiTrackPayload({ bot });
-		emitDataForUdp(payload);
+		// emitDataForUdp(payload);
+		emitDataForTcp(payload);
 
 		bot.programWait = generateWait(INTERVAL, 'seconds');
 	}

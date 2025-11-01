@@ -16,4 +16,6 @@ export default interface Environment {
 	MIN_SPEED_MS: number;
 	MAX_SPEED_MS: number;
 	INITIAL_SPEED_MS: number;
+	TCP_HOST: string;
+	TCP_PORT: number;
 }

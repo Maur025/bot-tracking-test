@@ -18,6 +18,8 @@ const {
 	MIN_SPEED_MS = '8',
 	MAX_SPEED_MS = '26',
 	INITIAL_SPEED_MS = '13',
+	TCP_HOST = 'localhost',
+	TCP_PORT = '9999',
 } = process.env;
 
 const env: Environment = {
@@ -38,6 +40,8 @@ const env: Environment = {
 	MIN_SPEED_MS: Number(MIN_SPEED_MS),
 	MAX_SPEED_MS: Number(MAX_SPEED_MS),
 	INITIAL_SPEED_MS: Number(INITIAL_SPEED_MS),
+	TCP_HOST,
+	TCP_PORT: Number(TCP_PORT),
 };
 
 export default env;
